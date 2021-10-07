@@ -1,5 +1,4 @@
 import numpy as np
-import mainAudio as mA
 #Dimensao da matriz
 a = np.array([[1,2],[2,3]])
 (l,c) = a.shape
@@ -38,7 +37,3 @@ b = a.sum(1)
 print(a)
 print(a>1)
 print(a[a>1])
-
-
-if __name__ == '__main__':
-    mA.start()
