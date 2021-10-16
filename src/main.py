@@ -40,15 +40,14 @@ for i in range(maxPart):
 """
 allData = getAllPartData(dirParts + "part", maxPart)
 for act in activityLabels.keys():
+
     accMod = getActivityMod(allData, 1, act)
     gyroMod = getActivityMod(allData, 4, act)
     magMod = getActivityMod(allData, 7, act)
-
-    print("AccModule", accMod)
-    print("Gyro Module", gyroMod)
-    print("Mag Module", magMod)
-
-    break
+    print("ACTIVITY -----> " + activityLabels[act]+"\n\n")
+    print("AccModule: ", accMod)
+    print("Gyro Module: ", gyroMod)
+    print("Mag Module: ", magMod)
 
     # drawBoxPlot(accMod)
 

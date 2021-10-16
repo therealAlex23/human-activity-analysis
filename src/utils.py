@@ -28,9 +28,14 @@ def getAllPartData(dir, maxPart):
 #    return np.linalg.norm(data[:, startIndex:startIndex + 3], axis=1)
 
 def getActivityMod(data, startIndex, activityIndex):
-    activityVector = np.where(data[:, -1] == activityIndex)
-    print(activityVector)
-    # return np.linalg.norm(activityVector[:, startIndex:startIndex + 3], axis=1)
+    filterArr = data[:,11] == activityIndex
+    activityData = data[:][filterArr] 
+    """
+    Nao da para fazer da maneira --> data[:,filterArr] 
+    Erro: IndexError: boolean index did not match indexed array along dimension 1; dimension is 12 but corresponding boolean dimension is 3930873
+    Perguntar ao prof
+    """
+    return np.linalg.norm(activityData[:, startIndex:startIndex + 3], axis=1)
 
 
 def drawBoxPlot(data):
