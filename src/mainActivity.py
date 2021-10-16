@@ -9,6 +9,6 @@ activityLabels = {  1:'Stand', 2:'Sit' , 3: 'Sit and Talk', 4:'Walk', 5: 'Walk a
 
 deviceID = {1:'Pulso Esquerdo', 2:'Pulso direito', 3:'Peito', 4:'Perna superior direita', 5:'Perna infeiror esquerda'}
 
-dirParts= "/home/therealalex/Desktop/UNI/MECD/TCD/Project/assets/DatasetParts/"
+dirParts= "../assets/DatasetParts/"
 
 imp.extractPartData(dirParts+"part",0)

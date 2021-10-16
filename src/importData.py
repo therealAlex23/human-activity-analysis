@@ -10,4 +10,5 @@ def extractPartData(dir,numPart):
     return partData
 
 def boxplotAct():
+    partsData = []
     return 0
