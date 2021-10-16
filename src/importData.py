@@ -8,3 +8,6 @@ def extractPartData(dir,numPart):
         sensData = np.genfromtxt(fullDir+str(sens)+ ".csv",delimiter=',')
         partData = np.append(partData,sensData,axis=0)
     return partData
+
+def boxplotAct():
+    return 0
