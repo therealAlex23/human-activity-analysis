@@ -32,8 +32,8 @@ def getActivityMod(data, startIndex, activityIndex):
     activityData = data[:][filterArr] 
     """
     Nao da para fazer da maneira --> data[:,filterArr] 
-    Erro: IndexError: boolean index did not match indexed array along dimension 1; dimension is 12 but corresponding boolean dimension is 3930873
-    Perguntar ao prof
+    Se usar dessa maneira gera-me este erro --> IndexError: boolean index did not match indexed array along dimension 1; dimension is 12 but corresponding boolean dimension is 3930873
+    Perguntar ao prof só para saber o porque 
     """
     return np.linalg.norm(activityData[:, startIndex:startIndex + 3], axis=1)
 
