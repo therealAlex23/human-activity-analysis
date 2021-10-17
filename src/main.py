@@ -4,6 +4,7 @@ from utils import *
 dirParts = "../assets/DatasetParts/"
 maxPart = 15
 noOfSensors = 5
+
 activityLabels = {
     1: 'Stand', 2: 'Sit', 3: 'Sit and Talk', 4: 'Walk', 5: 'Walk and Talk',
     6: 'Climb Stair(up/down)', 7: 'Climb(up/down)', 8: 'Stand -> Sit',
@@ -12,6 +13,7 @@ activityLabels = {
     14: 'Stand -> climb stairs (up/down), stand -> climb stairs (up/down) and talk',
     15: 'Climb stairs (up/down) -> walk',
     16: 'Climb stairs (up/down) and talk -> walk and talk'}
+
 deviceID = {1: 'Pulso Esquerdo', 2: 'Pulso direito', 3: 'Peito',
             4: 'Perna superior direita', 5: 'Perna inferior esquerda'
             }
@@ -39,6 +41,9 @@ for i in range(maxPart):
     drawBoxPlot(accModule)
 """
 allData = getAllPartData(dirParts + "part", maxPart)
+getBoxPlotModuleActivity("cona",allData,activityLabels,1,2)
+
+"""
 for act in activityLabels.keys():
 
     accMod = getActivityMod(allData, 1, act)
@@ -50,6 +55,6 @@ for act in activityLabels.keys():
     print("Mag Module: ", magMod)
 
     # drawBoxPlot(accMod)
-
+"""
 
 print("Done")
