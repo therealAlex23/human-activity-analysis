@@ -1,7 +1,8 @@
+from scipy.stats.stats import zscore
 from utils import *
 
 # Globals
-dirParts = "../assets/DatasetParts/"
+dirParts = "../assets/DatasetParts/part"
 maxPart = 15
 noOfSensors = 5
 
@@ -19,42 +20,17 @@ deviceID = {1: 'Pulso Esquerdo', 2: 'Pulso direito', 3: 'Peito',
             }
 
 
-# Questao 3.1
-"""
-for i in range(maxPart):
-    print("Participant " + str(i))
-    data = extractPartData(dirParts + "part", i)
-    getActivityMod(data, 1, 1)  # 1 = Stand
-    getActivityMod(data, 1, 2)  # 2 = Sit
-    getActivityMod(data, 1, 3)  # 3 = Sit&Talk
-    getActivityMod(data, 1, 4)  # etc...
+# Questao 3.1 e 3.2
+# allData = getAllPartData(dirParts + "part", maxPart)
+# getBoxPlotModuleActivity("cona", allData, activityLabels, 1, 2)
 
-    # accModule = getSensorModuleArray(data, 1)
-    # gyroModule = getSensorModuleArray(data, 4)
-    # magModule = getSensorModuleArray(data, 7)
-
-    
-    print("AccModule", accModule)
-    print("Gyro Module", gyroModule)
-    print("Mag Module", magModule)
-
-    drawBoxPlot(accModule)
-"""
-allData = getAllPartData(dirParts + "part", maxPart)
-getBoxPlotModuleActivity("cona",allData,activityLabels,1,2)
-
-"""
-for act in activityLabels.keys():
-
-    accMod = getActivityMod(allData, 1, act)
-    gyroMod = getActivityMod(allData, 4, act)
-    magMod = getActivityMod(allData, 7, act)
-    print("ACTIVITY -----> " + activityLabels[act]+"\n\n")
-    print("AccModule: ", accMod)
-    print("Gyro Module: ", gyroMod)
-    print("Mag Module: ", magMod)
-
-    # drawBoxPlot(accMod)
-"""
+# Questao 3.3 e 3.4
+# Escolhi o participante 0 --
+chosenParticipant = 0
+data = extractPartData(dirParts, 0)
+fig, axs = plt.subplots(3)
+plotOutliers(data, 3, 1, 1, axs)  # stand dev1
+fig.suptitle(f"PART0 - STAND")
+plt.show()
 
 print("Done")

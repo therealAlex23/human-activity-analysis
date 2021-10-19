@@ -28,49 +28,44 @@ def getAllPartData(dir, maxPart):
 #    return np.linalg.norm(data[:, startIndex:startIndex + 3], axis=1)
 
 def getActivityMod(data, startIndex, activityIndex, sensorID):
-    filterArrAct = data[:,11] == activityIndex
-    activityData = data[:][filterArrAct] 
-    filterArrSens = activityData[:,0] == sensorID
-    activityData = activityData[:][filterArrSens] 
-    
-    """
-    Nao da para fazer da maneira --> data[:,filterArr] 
-    Se usar dessa maneira gera-me este erro --> IndexError: boolean index did not match indexed array along dimension 1; dimension is 12 but corresponding boolean dimension is 3930873
-    Perguntar ao prof só para saber o porque 
-    """
+    filterArrAct = data[:, 11] == activityIndex
+    activityData = data[:][filterArrAct]
+    filterArrSens = activityData[:, 0] == sensorID
+    activityData = activityData[:][filterArrSens]
 
     return np.linalg.norm(activityData[:, startIndex:startIndex + 3], axis=1)
+
 
 def getDensityOutliers():
     pass
 
-def getBoxPlotModuleActivity(moduleName,allData,activities,startIndex,sensorID):
 
+def getBoxPlotModuleActivity(moduleName, allData, activities, startIndex, sensorID):
     """
-    Draws a figure with multiples boxplots 
+    Draws a figure with multiples boxplots
     Each one contains a dataset of a variable module by activity from one sensor
     """
-
     plt.figure()
     ticks = activities.values()
     positionsBox = range(0, len(ticks) * 5, 5)
     for act in activities.keys():
-        modActData = getActivityMod(allData,startIndex,act,sensorID)
-        bp = plt.boxplot(modActData, positions = [positionsBox[act-1]], widths=0.6)
-        setBoxColors(bp,"red")
-    plt.xticks(range(0, len(ticks) * 5, 5), ticks,rotation ='vertical')
+        modActData = getActivityMod(allData, startIndex, act, sensorID)
+        bp = plt.boxplot(modActData, positions=[
+                         positionsBox[act-1]], widths=0.6)
+        setBoxColors(bp, "red")
+    plt.xticks(range(0, len(ticks) * 5, 5), ticks, rotation='vertical')
     plt.xlim(-2, len(ticks)*5)
-    plt.ylim(0,35)
+    plt.ylim(0, 35)
     plt.show()
-    #plt.savefig('boxcompare.png')
+    # plt.savefig('boxcompare.png')
     pass
 
-def setBoxColors(bp,color):
+
+def setBoxColors(bp, color):
     plt.setp(bp['boxes'], color=color)
     plt.setp(bp['whiskers'], color=color)
     plt.setp(bp['caps'], color=color)
     plt.setp(bp['medians'], color=color)
-
 
 
 def drawBoxPlot(data):
@@ -78,3 +73,32 @@ def drawBoxPlot(data):
     ax1.set_title('Basic Plot')
     ax1.boxplot(data)
     plt.show()
+
+
+def zscore(arr, k):
+    """
+    Devolve os indices dos outliers
+    """
+    zscore = (arr - np.mean(arr)) / np.std(arr)
+    filter = np.abs(zscore) > k
+    return np.where(filter)[0]
+
+
+def plotScatter(ax, x, y, title):
+    ax.plot(y, '.', color='blue')
+    ax.plot(x, y[x], '.', color='red')
+    ax.set_title(title)
+
+
+# deviceId, acc[x, y, z], gyro[x, y, z], mag[x, y, z], timestamp, activityIndex
+def plotOutliers(data, k, activity_index, sensor_id, axs):
+    acc_mod = getActivityMod(data, 1, activity_index, sensor_id)
+    gyro_mod = getActivityMod(data, 4, activity_index, sensor_id)
+    mag_mod = getActivityMod(data, 7, activity_index, sensor_id)
+
+    print(zscore(mag_mod, k))
+    print(gyro_mod[zscore(mag_mod, k)])
+
+    plotScatter(axs[0], zscore(acc_mod, k), acc_mod, "ACC")
+    plotScatter(axs[1], zscore(gyro_mod, k), gyro_mod, "GYRO")
+    plotScatter(axs[2], zscore(mag_mod, k), mag_mod, "MAG")
