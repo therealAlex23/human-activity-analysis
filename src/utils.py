@@ -29,10 +29,10 @@ def getAllPartData(dir, maxPart):
 
 def getActivityMod(data, startIndex, activityIndex, sensorID):
     filterArrAct = data[:,11] == activityIndex
-    activityData = data[:][filterArrAct] 
-    filterArrSens = activityData[:,0] == sensorID
-    activityData = activityData[:][filterArrSens] 
-    
+    activityData = data[:][filterArrAct]
+    if sensorID is not None:
+        filterArrSens = activityData[:,0] == sensorID
+        activityData = activityData[:][filterArrSens] 
     """
     Nao da para fazer da maneira --> data[:,filterArr] 
     Se usar dessa maneira gera-me este erro --> IndexError: boolean index did not match indexed array along dimension 1; dimension is 12 but corresponding boolean dimension is 3930873
@@ -41,29 +41,59 @@ def getActivityMod(data, startIndex, activityIndex, sensorID):
 
     return np.linalg.norm(activityData[:, startIndex:startIndex + 3], axis=1)
 
-def getDensityOutliers():
-    pass
+def getDensityOutliers(allData,activities,sensorID):
+    getBoxPlotModuleActivity("Acelaração", allData,activities,1,sensorID)
+    getBoxPlotModuleActivity("Giroscopio", allData,activities,4,sensorID)
+    getBoxPlotModuleActivity("Magnetometro", allData,activities,7,sensorID)
+    plt.show()
 
 def getBoxPlotModuleActivity(moduleName,allData,activities,startIndex,sensorID):
 
     """
-    Draws a figure with multiples boxplots 
-    Each one contains a dataset of a variable module by activity from one sensor
+    Draws figures with multiples boxplots 
+    Each one contains a dataset of the acceleration/gyroscope/magnetometer module by activity 
+    Detected by one sensor identified by the sensorID
     """
 
-    plt.figure()
+    fig = plt.figure()
+    fig.suptitle("Modulo " + moduleName)
     ticks = activities.values()
     positionsBox = range(0, len(ticks) * 5, 5)
+    
+    print("-----------------MODULO DE " + moduleName+"-----------------------\n")
+    yMaxLimit = 0
+    yMinLImit = 0
+
     for act in activities.keys():
+        print("ACTIVITY: " + activities[act]+"\n")
         modActData = getActivityMod(allData,startIndex,act,sensorID)
+
+        maxValueArr = np.max(modActData)
+        minValueArr = np.min(modActData)
+        if maxValueArr > yMaxLimit:
+            yMaxLimit = maxValueArr     
+        if minValueArr < yMinLImit:
+            yMinLImit = minValueArr 
+        
+        totalPoints = len(modActData)
+
+        print("Numero total de pontos: " + str(totalPoints))
         bp = plt.boxplot(modActData, positions = [positionsBox[act-1]], widths=0.6)
+
+        totalOutliers= len(bp["fliers"][0].get_data()[1])
+
+        print("Numero de Outliers: " + str(totalOutliers))
+        dens = (totalOutliers/totalPoints) * 100
+
+        print("Densidade de outliers: " + str(dens)+"\n")
+
         setBoxColors(bp,"red")
+    
     plt.xticks(range(0, len(ticks) * 5, 5), ticks,rotation ='vertical')
     plt.xlim(-2, len(ticks)*5)
-    plt.ylim(0,35)
-    plt.show()
+    plt.ylim(yMinLImit,yMaxLimit+1)
+    print("\n\n")
     #plt.savefig('boxcompare.png')
-    pass
 
 def setBoxColors(bp,color):
     plt.setp(bp['boxes'], color=color)
@@ -71,10 +101,3 @@ def setBoxColors(bp,color):
     plt.setp(bp['caps'], color=color)
     plt.setp(bp['medians'], color=color)
 
-
-
-def drawBoxPlot(data):
-    _, ax1 = plt.subplots()
-    ax1.set_title('Basic Plot')
-    ax1.boxplot(data)
-    plt.show()

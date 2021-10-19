@@ -1,7 +1,7 @@
 from utils import *
 
 # Globals
-dirParts = "../assets/DatasetParts/"
+dirParts = "../assets/"
 maxPart = 15
 noOfSensors = 5
 
@@ -19,42 +19,12 @@ deviceID = {1: 'Pulso Esquerdo', 2: 'Pulso direito', 3: 'Peito',
             }
 
 
-# Questao 3.1
-"""
-for i in range(maxPart):
-    print("Participant " + str(i))
-    data = extractPartData(dirParts + "part", i)
-    getActivityMod(data, 1, 1)  # 1 = Stand
-    getActivityMod(data, 1, 2)  # 2 = Sit
-    getActivityMod(data, 1, 3)  # 3 = Sit&Talk
-    getActivityMod(data, 1, 4)  # etc...
-
-    # accModule = getSensorModuleArray(data, 1)
-    # gyroModule = getSensorModuleArray(data, 4)
-    # magModule = getSensorModuleArray(data, 7)
-
-    
-    print("AccModule", accModule)
-    print("Gyro Module", gyroModule)
-    print("Mag Module", magModule)
-
-    drawBoxPlot(accModule)
-"""
+# Questao 2 - Importação de Dados
 allData = getAllPartData(dirParts + "part", maxPart)
-getBoxPlotModuleActivity("cona",allData,activityLabels,1,2)
 
-"""
-for act in activityLabels.keys():
+# Questao 3.2 - Densidade dos outliers
+getDensityOutliers(allData,activityLabels,1)
+#getBoxPlotModuleActivity("cona",allData,activityLabels,1,2)
 
-    accMod = getActivityMod(allData, 1, act)
-    gyroMod = getActivityMod(allData, 4, act)
-    magMod = getActivityMod(allData, 7, act)
-    print("ACTIVITY -----> " + activityLabels[act]+"\n\n")
-    print("AccModule: ", accMod)
-    print("Gyro Module: ", gyroMod)
-    print("Mag Module: ", magMod)
-
-    # drawBoxPlot(accMod)
-"""
 
 print("Done")
