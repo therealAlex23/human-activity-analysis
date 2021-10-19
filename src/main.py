@@ -1,8 +1,7 @@
-from scipy.stats.stats import zscore
 from utils import *
 
 # Globals
-dirParts = "../assets/"
+dirParts = "../assets/part"
 maxPart = 15
 noOfSensors = 5
 
@@ -21,23 +20,22 @@ deviceID = {1: 'Pulso Esquerdo', 2: 'Pulso direito', 3: 'Peito',
 
 
 # Questao 2 - Importação de Dados
-allData = getAllPartData(dirParts + "part", maxPart)
+# allData = getAllPartData(dirParts + "part", maxPart)
 
 # Questao 3.2 - Densidade dos outliers
-getDensityOutliers(allData,activityLabels,1)
-#getBoxPlotModuleActivity("cona",allData,activityLabels,1,2)
+# getDensityOutliers(allData,activityLabels, 1)
 
 # Questao 3.1 e 3.2
 # allData = getAllPartData(dirParts + "part", maxPart)
-# getBoxPlotModuleActivity("cona", allData, activityLabels, 1, 2)
 
 # Questao 3.3 e 3.4
-# Escolhi o participante 0 --
 chosenParticipant = 0
+chosenActivity = 8
 data = extractPartData(dirParts, 0)
 fig, axs = plt.subplots(3)
-plotOutliers(data, 3, 1, 1, axs)  # stand dev1
-fig.suptitle(f"PART0 - STAND")
+plotOutliers(data, 4, chosenActivity, 1, axs)
+fig.suptitle(
+    f"Part {chosenParticipant} - {activityLabels.get(chosenActivity)}")
 plt.show()
 
 print("Done")

@@ -28,23 +28,19 @@ def getAllPartData(dir, maxPart):
 #    return np.linalg.norm(data[:, startIndex:startIndex + 3], axis=1)
 
 def getActivityMod(data, startIndex, activityIndex, sensorID):
-    filterArrAct = data[:,11] == activityIndex
+    filterArrAct = data[:, 11] == activityIndex
     activityData = data[:][filterArrAct]
     if sensorID is not None:
-        filterArrSens = activityData[:,0] == sensorID
-        activityData = activityData[:][filterArrSens] 
-    """
-    Nao da para fazer da maneira --> data[:,filterArr] 
-    Se usar dessa maneira gera-me este erro --> IndexError: boolean index did not match indexed array along dimension 1; dimension is 12 but corresponding boolean dimension is 3930873
-    Perguntar ao prof só para saber o porque 
-    """
+        filterArrSens = activityData[:, 0] == sensorID
+        activityData = activityData[:][filterArrSens]
 
     return np.linalg.norm(activityData[:, startIndex:startIndex + 3], axis=1)
 
-def getDensityOutliers(allData,activities,sensorID):
-    getBoxPlotModuleActivity("Acelaração", allData,activities,1,sensorID)
-    getBoxPlotModuleActivity("Giroscopio", allData,activities,4,sensorID)
-    getBoxPlotModuleActivity("Magnetometro", allData,activities,7,sensorID)
+
+def getDensityOutliers(allData, activities, sensorID):
+    getBoxPlotModuleActivity("Aceleração", allData, activities, 1, sensorID)
+    getBoxPlotModuleActivity("Giroscopio", allData, activities, 4, sensorID)
+    getBoxPlotModuleActivity("Magnetometro", allData, activities, 7, sensorID)
     plt.show()
 
 
@@ -59,41 +55,43 @@ def getBoxPlotModuleActivity(moduleName, allData, activities, startIndex, sensor
     fig.suptitle("Modulo " + moduleName)
     ticks = activities.values()
     positionsBox = range(0, len(ticks) * 5, 5)
-    
-    print("-----------------MODULO DE " + moduleName+"-----------------------\n")
+
+    print("-----------------MODULO DE " +
+          moduleName+"-----------------------\n")
     yMaxLimit = 0
     yMinLImit = 0
 
     for act in activities.keys():
         print("ACTIVITY: " + activities[act]+"\n")
-        modActData = getActivityMod(allData,startIndex,act,sensorID)
+        modActData = getActivityMod(allData, startIndex, act, sensorID)
 
         maxValueArr = np.max(modActData)
         minValueArr = np.min(modActData)
         if maxValueArr > yMaxLimit:
-            yMaxLimit = maxValueArr     
+            yMaxLimit = maxValueArr
         if minValueArr < yMinLImit:
-            yMinLImit = minValueArr 
-        
+            yMinLImit = minValueArr
+
         totalPoints = len(modActData)
 
         print("Numero total de pontos: " + str(totalPoints))
-        bp = plt.boxplot(modActData, positions = [positionsBox[act-1]], widths=0.6)
+        bp = plt.boxplot(modActData, positions=[
+                         positionsBox[act-1]], widths=0.6)
 
-        totalOutliers= len(bp["fliers"][0].get_data()[1])
+        totalOutliers = len(bp["fliers"][0].get_data()[1])
 
         print("Numero de Outliers: " + str(totalOutliers))
         dens = (totalOutliers/totalPoints) * 100
 
         print("Densidade de outliers: " + str(dens)+"\n")
 
-        setBoxColors(bp,"red")
-    
-    plt.xticks(range(0, len(ticks) * 5, 5), ticks,rotation ='vertical')
+        setBoxColors(bp, "red")
+
+    plt.xticks(range(0, len(ticks) * 5, 5), ticks, rotation='vertical')
     plt.xlim(-2, len(ticks)*5)
-    plt.ylim(yMinLImit,yMaxLimit+1)
+    plt.ylim(yMinLImit, yMaxLimit+1)
     print("\n\n")
-    #plt.savefig('boxcompare.png')
+    # plt.savefig('boxcompare.png')
 
 
 def setBoxColors(bp, color):
@@ -130,9 +128,6 @@ def plotOutliers(data, k, activity_index, sensor_id, axs):
     acc_mod = getActivityMod(data, 1, activity_index, sensor_id)
     gyro_mod = getActivityMod(data, 4, activity_index, sensor_id)
     mag_mod = getActivityMod(data, 7, activity_index, sensor_id)
-
-    print(zscore(mag_mod, k))
-    print(gyro_mod[zscore(mag_mod, k)])
 
     plotScatter(axs[0], zscore(acc_mod, k), acc_mod, "ACC")
     plotScatter(axs[1], zscore(gyro_mod, k), gyro_mod, "GYRO")
