@@ -1,3 +1,4 @@
+from scipy.stats.stats import zscore
 from utils import *
 
 # Globals
@@ -26,5 +27,17 @@ allData = getAllPartData(dirParts + "part", maxPart)
 getDensityOutliers(allData,activityLabels,1)
 #getBoxPlotModuleActivity("cona",allData,activityLabels,1,2)
 
+# Questao 3.1 e 3.2
+# allData = getAllPartData(dirParts + "part", maxPart)
+# getBoxPlotModuleActivity("cona", allData, activityLabels, 1, 2)
+
+# Questao 3.3 e 3.4
+# Escolhi o participante 0 --
+chosenParticipant = 0
+data = extractPartData(dirParts, 0)
+fig, axs = plt.subplots(3)
+plotOutliers(data, 3, 1, 1, axs)  # stand dev1
+fig.suptitle(f"PART0 - STAND")
+plt.show()
 
 print("Done")
