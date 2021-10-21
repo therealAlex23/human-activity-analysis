@@ -1,4 +1,5 @@
 import numpy as np
+from mpl_toolkits import mplot3d
 import matplotlib.pyplot as plt
 
 
@@ -24,17 +25,20 @@ def getAllPartData(dir, maxPart):
     return allData
 
 
-# def getSensorModuleArray(data, startIndex):
-#    return np.linalg.norm(data[:, startIndex:startIndex + 3], axis=1)
+def getVectorModule(data, startIndex):
+    return np.linalg.norm(data[:, startIndex:startIndex + 3], axis=1)
 
-def getActivityMod(data, startIndex, activityIndex, sensorID):
+
+def getActivityData(data, activityIndex, sensorID):
+    """
+    Returns measurements (x, y, z) for acc, gyro and mag
+    """
     filterArrAct = data[:, 11] == activityIndex
     activityData = data[:][filterArrAct]
     if sensorID is not None:
         filterArrSens = activityData[:, 0] == sensorID
         activityData = activityData[:][filterArrSens]
-
-    return np.linalg.norm(activityData[:, startIndex:startIndex + 3], axis=1)
+    return activityData
 
 
 def getDensityOutliers(allData, activities, sensorID):
@@ -46,8 +50,8 @@ def getDensityOutliers(allData, activities, sensorID):
 
 def getBoxPlotModuleActivity(moduleName, allData, activities, startIndex, sensorID):
     """
-    Draws figures with multiples boxplots 
-    Each one contains a dataset of the acceleration/gyroscope/magnetometer module by activity 
+    Draws figures with multiples boxplots
+    Each one contains a dataset of the acceleration/gyroscope/magnetometer module by activity
     Detected by one sensor identified by the sensorID
     """
 
@@ -63,7 +67,8 @@ def getBoxPlotModuleActivity(moduleName, allData, activities, startIndex, sensor
 
     for act in activities.keys():
         print("ACTIVITY: " + activities[act]+"\n")
-        modActData = getActivityMod(allData, startIndex, act, sensorID)
+        modActData = getVectorModule(getActivityData(
+            allData, act, sensorID), startIndex)
 
         maxValueArr = np.max(modActData)
         minValueArr = np.min(modActData)
@@ -125,10 +130,124 @@ def plotScatter(ax, x, y, title):
 
 # deviceId, acc[x, y, z], gyro[x, y, z], mag[x, y, z], timestamp, activityIndex
 def plotOutliers(data, k, activity_index, sensor_id, axs):
-    acc_mod = getActivityMod(data, 1, activity_index, sensor_id)
-    gyro_mod = getActivityMod(data, 4, activity_index, sensor_id)
-    mag_mod = getActivityMod(data, 7, activity_index, sensor_id)
+    acc_mod = getVectorModule(
+        getActivityData(
+            data,
+            activity_index,
+            sensor_id
+        ),
+        1
+    )
+    gyro_mod = getVectorModule(
+        getActivityData(
+            data,
+            activity_index,
+            sensor_id
+        ),
+        4
+    )
+    mag_mod = getVectorModule(
+        getActivityData(
+            data,
+            activity_index,
+            sensor_id
+        ),
+        7
+    )
 
     plotScatter(axs[0], zscore(acc_mod, k), acc_mod, "ACC")
     plotScatter(axs[1], zscore(gyro_mod, k), gyro_mod, "GYRO")
     plotScatter(axs[2], zscore(mag_mod, k), mag_mod, "MAG")
+
+
+def initClusters(arr, n):
+    """
+    Initializa 'n' clusters a partir de
+    pontos aleatorios do dataset.
+    """
+    return arr[np.random.randint(arr.shape[0], size=n)]
+
+
+def calcDist(centroid, arr):
+    """
+    Returns euclidean distance.
+    """
+    return np.linalg.norm(arr - centroid, axis=1)
+
+
+def kmeans1(arr, n, iters):
+    # inicializar 'n' clusters com centroides escolhidos ao acaso
+    # centroide estao smp no inicio da fila
+    clusters = initClusters(arr, n)
+    for j in range(iters):
+        for i in range(len(clusters)):
+            cluster, centroid = clusters[i], clusters[i][0]
+            print("BEFORE:")
+            print("Cluster: ", cluster)
+            print("Centroid: ", centroid)
+            print("-----------------------------------")
+
+            # assign point to its closest centroid
+            dist = calcDist(arr, centroid)
+            new_point = arr[dist == np.argmin(dist, axis=0)]
+            cluster = np.append(cluster, new_point, axis=0)
+            print(
+                f"Adding: {np.array(new_point)} with a distance of {dist[dist == np.nanmin(dist)]} to nearest centroid")
+            print("Updated cluster: ", cluster)
+
+            # compute mean and update centroid
+            new_centroid = np.mean(cluster, axis=0)
+            print("Updated centroid: ", new_centroid)
+            if np.all(new_centroid) != np.all(centroid):
+                cluster[0] = new_centroid
+                clusters[i] = cluster
+                print("Updated cluster: ", cluster)
+            else:
+                break
+
+            # debug
+            """
+            print("Centroid: ", centroid)
+            print("Adding: ", np.array([new_point]))
+            print("Updated cluster: ", cluster)
+            """
+
+    print("after\n", clusters)
+
+
+def kmeans2(arr, n, iters):
+    centroids = initClusters(arr, n)
+
+    # para n=3, cada linha = [d(c1->p1) d(c2->p1) d(c3->p1)]
+    distances = np.zeros([arr.shape[0], n])
+
+    for i in range(iters):
+        # distancia de cada centroide a cada ponto
+        for i, c in enumerate(centroids):
+            distances[:, i] = calcDist(c, arr)
+
+        # atualiza cada centroide
+        # com a media dos ptos que lhe sao mais proximos
+        groups = np.argmin(distances, axis=1)
+        for j in range(n):
+            centroids[j] = np.mean(arr[j == groups], 0)
+    return centroids, groups
+
+
+def plotKmeans(arr, centroids, groups):
+    _ = plt.figure()
+    ax = plt.axes(projection='3d')
+
+    group_colors = np.random.rand(len(centroids), 3)
+    colors = [group_colors[j] for j in groups]
+
+    # plot clusters
+    ax.scatter3D(arr[:, 0], arr[:, 1], arr[:, 2], color=colors, alpha=0.5)
+
+    # plot centroids
+    ax.scatter3D(centroids[:, 0], centroids[:, 1],
+                 centroids[:, 2], color='black', marker='x', lw=2)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    plt.show()

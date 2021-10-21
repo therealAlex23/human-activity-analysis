@@ -29,6 +29,7 @@ deviceID = {1: 'Pulso Esquerdo', 2: 'Pulso direito', 3: 'Peito',
 # allData = getAllPartData(dirParts + "part", maxPart)
 
 # Questao 3.3 e 3.4
+"""
 chosenParticipant = 0
 chosenActivity = 8
 data = extractPartData(dirParts, 0)
@@ -37,5 +38,23 @@ plotOutliers(data, 4, chosenActivity, 1, axs)
 fig.suptitle(
     f"Part {chosenParticipant} - {activityLabels.get(chosenActivity)}")
 plt.show()
+"""
+
+# Questão 3.6
+# variables --
+chosenParticipant = 0
+chosenActivity = 1
+chosenSensorId = 1
+# ------------
+data = extractPartData(dirParts, chosenParticipant)
+
+# ignore activityId, sensorId and timestamp
+device_data = getActivityData(data, chosenActivity, chosenSensorId)[:, 1:-2]
+
+# acc data for chosenActivity only
+# kmeans1(device_data[:, :3], 3, 10)
+# https://www.youtube.com/watch?v=_aWzGGNrcic
+centroids, groups = kmeans2(device_data[:, :3], 3, 1)
+plotKmeans(device_data[:, :3], centroids, groups)
 
 print("Done")
