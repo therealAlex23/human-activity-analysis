@@ -117,9 +117,8 @@ def zscore(arr, k):
     """
     Devolve os indices dos outliers
     """
-    zscore = np.abs((arr - np.mean(arr)) / np.std(arr))
-    filter = ((zscore < k) & (zscore >= k))
-    return np.where(filter)[0]
+    z = np.abs((arr - np.mean(arr)) / np.std(arr))
+    return np.where(z > k)[0]
 
 
 def plotScatter(ax, x, y, title):
@@ -213,21 +212,22 @@ def kmeans2(arr, n):
         for j in range(n):
             centroids[j] = np.mean(arr[j == groups], 0)
 
-        if (old_centroids.all() == centroids.all()):
+        if ((old_centroids == centroids).all()):
             break
     return centroids, groups
 
 
-def plotKmeans(ax, arr, centroids, groups):
+def plotKmeans(ax, arr, k, centroids, groups):
     group_colors = np.random.rand(len(centroids), 3)
     colors = [group_colors[j] for j in groups]
 
     # plot clusters
     ax.scatter3D(arr[:, 0], arr[:, 1], arr[:, 2], color=colors, alpha=0.5)
 
-    # plot outliers - TODO
-    # outliers =
-    # ax.scatter3D()
+    # plot outliers
+    # outliers = zscore(arr, k)
+    # print(outliers)
+    # ax.scatter3D(outliers[])
 
     # plot centroids
     ax.scatter3D(centroids[:, 0], centroids[:, 1],

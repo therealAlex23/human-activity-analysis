@@ -29,12 +29,11 @@ deviceID = {1: 'Pulso Esquerdo', 2: 'Pulso direito', 3: 'Peito',
 # allData = getAllPartData(dirParts + "part", maxPart)
 
 # Questao 3.3 e 3.4
-
 # -- Variables
 """
 chosenParticipant = 0
 chosenActivity = 8
-k = 4
+k = 3
 chosenSensorId = 1
 
 data = extractPartData(dirParts, 0)
@@ -59,6 +58,7 @@ plt.show()
 chosenParticipant = 0
 chosenActivity = 1
 chosenSensorId = 1
+k = 3
 # ------------
 data = extractPartData(dirParts, chosenParticipant)
 
@@ -68,11 +68,11 @@ device_data = getActivityData(data, chosenActivity, chosenSensorId)[:, 1:-2]
 # acc data for chosenActivity only
 # kmeans1(device_data[:, :3], 3, 10)
 # https://www.youtube.com/watch?v=_aWzGGNrcic
-centroids, groups = kmeans2(device_data[:, :3], 80)
+centroids, groups = kmeans2(device_data[:, :3], 4)
 
 fig = plt.figure()
 ax = plt.axes(projection='3d')
-plotKmeans(ax, device_data[:, :3], centroids, groups)
+plotKmeans(ax, device_data[:, :3], k, centroids, groups)
 ax.set_title(
     f"Part {chosenParticipant}/{activityLabels.get(chosenActivity)}/{deviceID.get(chosenSensorId)}")
 plt.show()
