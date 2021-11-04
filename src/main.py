@@ -29,12 +29,26 @@ deviceID = {1: 'Pulso Esquerdo', 2: 'Pulso direito', 3: 'Peito',
 # allData = getAllPartData(dirParts + "part", maxPart)
 
 # Questao 3.3 e 3.4
+
+# -- Variables
 """
 chosenParticipant = 0
 chosenActivity = 8
+k = 4
+chosenSensorId = 1
+
 data = extractPartData(dirParts, 0)
+sensorData = [
+    getVectorModule(
+        getActivityData(
+            data,
+            chosenActivity,
+            chosenSensorId),
+        i)
+    for i in range(1, 8, 3)]
+
 fig, axs = plt.subplots(3)
-plotOutliers(data, 4, chosenActivity, 1, axs)
+plotOutliers(sensorData, k, axs)
 fig.suptitle(
     f"Part {chosenParticipant} - {activityLabels.get(chosenActivity)}")
 plt.show()
@@ -54,7 +68,13 @@ device_data = getActivityData(data, chosenActivity, chosenSensorId)[:, 1:-2]
 # acc data for chosenActivity only
 # kmeans1(device_data[:, :3], 3, 10)
 # https://www.youtube.com/watch?v=_aWzGGNrcic
-centroids, groups = kmeans2(device_data[:, :3], 3, 1)
-plotKmeans(device_data[:, :3], centroids, groups)
+centroids, groups = kmeans2(device_data[:, :3], 80)
+
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+plotKmeans(ax, device_data[:, :3], centroids, groups)
+ax.set_title(
+    f"Part {chosenParticipant}/{activityLabels.get(chosenActivity)}/{deviceID.get(chosenSensorId)}")
+plt.show()
 
 print("Done")

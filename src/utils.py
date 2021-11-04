@@ -117,8 +117,8 @@ def zscore(arr, k):
     """
     Devolve os indices dos outliers
     """
-    zscore = (arr - np.mean(arr)) / np.std(arr)
-    filter = np.abs(zscore) > k
+    zscore = np.abs((arr - np.mean(arr)) / np.std(arr))
+    filter = ((zscore < k) & (zscore >= k))
     return np.where(filter)[0]
 
 
@@ -129,35 +129,10 @@ def plotScatter(ax, x, y, title):
 
 
 # deviceId, acc[x, y, z], gyro[x, y, z], mag[x, y, z], timestamp, activityIndex
-def plotOutliers(data, k, activity_index, sensor_id, axs):
-    acc_mod = getVectorModule(
-        getActivityData(
-            data,
-            activity_index,
-            sensor_id
-        ),
-        1
-    )
-    gyro_mod = getVectorModule(
-        getActivityData(
-            data,
-            activity_index,
-            sensor_id
-        ),
-        4
-    )
-    mag_mod = getVectorModule(
-        getActivityData(
-            data,
-            activity_index,
-            sensor_id
-        ),
-        7
-    )
-
-    plotScatter(axs[0], zscore(acc_mod, k), acc_mod, "ACC")
-    plotScatter(axs[1], zscore(gyro_mod, k), gyro_mod, "GYRO")
-    plotScatter(axs[2], zscore(mag_mod, k), mag_mod, "MAG")
+def plotOutliers(sensorData, k, axs):
+    labels = ["ACC", "GYRO", "MOD"]
+    for i, sensorMod in enumerate(sensorData):
+        plotScatter(axs[i], zscore(sensorMod, k), sensorMod, labels[i])
 
 
 def initClusters(arr, n):
@@ -176,6 +151,9 @@ def calcDist(centroid, arr):
 
 
 def kmeans1(arr, n, iters):
+    """
+    # esta mal
+    """
     # inicializar 'n' clusters com centroides escolhidos ao acaso
     # centroide estao smp no inicio da fila
     clusters = initClusters(arr, n)
@@ -215,34 +193,41 @@ def kmeans1(arr, n, iters):
     print("after\n", clusters)
 
 
-def kmeans2(arr, n, iters):
+def kmeans2(arr, n):
     centroids = initClusters(arr, n)
 
     # para n=3, cada linha = [d(c1->p1) d(c2->p1) d(c3->p1)]
     distances = np.zeros([arr.shape[0], n])
 
-    for i in range(iters):
+    while True:
         # distancia de cada centroide a cada ponto
         for i, c in enumerate(centroids):
             distances[:, i] = calcDist(c, arr)
 
-        # atualiza cada centroide
-        # com a media dos ptos que lhe sao mais proximos
+        # groups contem o indice do centroide do cluster
+        # mais proximos
         groups = np.argmin(distances, axis=1)
+
+        # para comparar
+        old_centroids = centroids
         for j in range(n):
             centroids[j] = np.mean(arr[j == groups], 0)
+
+        if (old_centroids.all() == centroids.all()):
+            break
     return centroids, groups
 
 
-def plotKmeans(arr, centroids, groups):
-    _ = plt.figure()
-    ax = plt.axes(projection='3d')
-
+def plotKmeans(ax, arr, centroids, groups):
     group_colors = np.random.rand(len(centroids), 3)
     colors = [group_colors[j] for j in groups]
 
     # plot clusters
     ax.scatter3D(arr[:, 0], arr[:, 1], arr[:, 2], color=colors, alpha=0.5)
+
+    # plot outliers - TODO
+    # outliers =
+    # ax.scatter3D()
 
     # plot centroids
     ax.scatter3D(centroids[:, 0], centroids[:, 1],
@@ -250,4 +235,3 @@ def plotKmeans(arr, centroids, groups):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    plt.show()
