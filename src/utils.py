@@ -217,21 +217,63 @@ def kmeans2(arr, n):
     return centroids, groups
 
 
-def plotKmeans(ax, arr, k, centroids, groups):
+def getOutliers(arr, k):
+    return [
+        [
+            arr[zscore(arr[:, i], k)][:, j] for j in range(3)
+        ] for i in range(3)
+    ]
+
+
+def plotKmeans(ax, arr, outliers, centroids, groups):
     group_colors = np.random.rand(len(centroids), 3)
     colors = [group_colors[j] for j in groups]
 
     # plot clusters
-    ax.scatter3D(arr[:, 0], arr[:, 1], arr[:, 2], color=colors, alpha=0.5)
+    ax.scatter3D(
+        arr[:, 0],
+        arr[:, 1],
+        arr[:, 2],
+        color=colors,
+        alpha=0.5
+    )
 
-    # plot outliers
-    # outliers = zscore(arr, k)
-    # print(outliers)
-    # ax.scatter3D(outliers[])
+    # plot acc outliers
+    ax.scatter3D(
+        outliers[0][0],
+        outliers[0][1],
+        outliers[0][2],
+        color='black',
+        alpha=1
+    )
+
+    # plot gyro outliers
+    ax.scatter3D(
+        outliers[1][0],
+        outliers[1][1],
+        outliers[1][2],
+        color='black',
+        alpha=1
+    )
+
+    # plot mag outliers
+    ax.scatter3D(
+        outliers[2][0],
+        outliers[2][1],
+        outliers[2][2],
+        color='black',
+        alpha=1
+    )
 
     # plot centroids
-    ax.scatter3D(centroids[:, 0], centroids[:, 1],
-                 centroids[:, 2], color='black', marker='x', lw=2)
+    ax.scatter3D(
+        centroids[:, 0],
+        centroids[:, 1],
+        centroids[:, 2],
+        color='black',
+        marker='X',
+        lw=5
+    )
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')

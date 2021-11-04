@@ -68,11 +68,13 @@ device_data = getActivityData(data, chosenActivity, chosenSensorId)[:, 1:-2]
 # acc data for chosenActivity only
 # kmeans1(device_data[:, :3], 3, 10)
 # https://www.youtube.com/watch?v=_aWzGGNrcic
+
 centroids, groups = kmeans2(device_data[:, :3], 4)
 
 fig = plt.figure()
 ax = plt.axes(projection='3d')
-plotKmeans(ax, device_data[:, :3], k, centroids, groups)
+outliers = getOutliers(device_data[:, :3], k)
+plotKmeans(ax, device_data[:, :3], outliers, centroids, groups)
 ax.set_title(
     f"Part {chosenParticipant}/{activityLabels.get(chosenActivity)}/{deviceID.get(chosenSensorId)}")
 plt.show()
