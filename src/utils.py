@@ -1,6 +1,8 @@
 import numpy as np
-from mpl_toolkits import mplot3d
 import matplotlib.pyplot as plt
+from numpy.lib.scimath import log
+from numpy.linalg.linalg import norm
+from scipy import stats
 
 
 def extractPartData(dir, numPart):
@@ -277,3 +279,60 @@ def plotKmeans(ax, arr, outliers, centroids, groups):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
+
+
+def normalizeCurve(arr):
+    """
+    Adjust data to fit common scale
+    """
+    return (arr - np.mean(arr)) / np.std(arr)
+
+
+def sturge(n):
+    """
+    Get correct number of histogram bins
+    according to Sturge's Rule.
+    'n' is the length of the data.
+    """
+    return int(round(1 + 3.322 * np.log(n)))
+
+
+def ksTest(arr):
+    """
+    Perform Kolmogorov-Smirnov test
+    on 1D arrays.
+    Utilized to compare the distribution of
+    our data with the normal distribution.
+    Note: stats.kstest returns 2 values: statistic and p-value
+    """
+    return stats.kstest(arr, 'norm')
+
+
+def makeGraphTitle(part, act, sensor, devId):
+    return f"[Part{part}] '{act}' - <{sensor}> {devId}"
+
+
+def plotDistribution(arr, nbins, ax, title):
+    ax.hist(arr, nbins)
+    ax.set_title(title)
+
+
+def plotCdfFit(ax, arr, x, title):
+    """
+    Plot CDF (i.e normal(0, 1))
+    against ECDF (our data)
+    """
+    ax.step(
+        arr,
+        np.arange(len(arr)) / len(arr),
+        where='post',
+        label='Empirical CDF'
+    )
+    ax.plot(
+        x,
+        stats.norm(0, 1).cdf(x),
+        label='CDF for N(0, 1)'
+    )
+    plt.legend()
+    ax.set_title(title)
+    plt.xlim([x[0], x[len(x) - 1]])
