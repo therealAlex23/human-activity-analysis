@@ -98,6 +98,58 @@ def getBoxPlotModuleActivity(moduleName, allData, activities, startIndex, sensor
     print("\n\n")
     # plt.savefig('boxcompare.png')
 
+def outliersInsertion(sampleData, densPer,k):
+
+    mean = np.mean(sampleData)
+    std = np.std(sampleData)
+
+    totPoints = len(sampleData)
+
+    limMin = mean - k* std
+    limMax = mean + k* std
+
+    indicesInliers = np.where((sampleData >= limMin) & (sampleData <= limMax))[0] 
+    numOut = totPoints - len(indicesInliers)
+    dataDens = (numOut/totPoints) * 100
+
+    print("Numero total de pontos: "+ str(totPoints))
+    print("Numero total de outliers: "+ str(numOut))
+    print("Densidade: " + str(dataDens))
+
+    if dataDens < densPer:
+        perChosen = (densPer - dataDens)/100
+
+        numChosenPoints = round(perChosen * len(indicesInliers))
+        print("Numero de inliers escolhidos aleatoriamente: " + str(numChosenPoints))
+
+        indicesChosenPoints = np.random.choice(indicesInliers,numChosenPoints,replace = False)
+        
+        for ind in indicesChosenPoints:
+
+            s = np.random.choice([-1,1],1,replace = False)[0]
+
+            maxVal = np.max(np.abs(sampleData))
+            z1 = maxVal - limMin
+            z2 = maxVal - limMax
+            if z1 > z2:
+                z = z1
+            else:
+                z = z2
+
+            q = np.random.uniform(low = 0.0, high = z)
+            sampleData[ind] = mean + s * k*(std + q)
+
+        newNumInliers = np.where((sampleData >= limMin) & (sampleData <= limMax))[0]
+        newNumOut = totPoints - len(newNumInliers)
+        newDataDens = (newNumOut/totPoints) * 100
+
+        print("NOVA DENSIDADE DA AMOSTRA: " + str(newDataDens))
+    
+    return sampleData
+
+
+def linearModule(xData,yData,p):
+    pass
 
 def setBoxColors(bp, color):
     plt.setp(bp['boxes'], color=color)
@@ -120,7 +172,6 @@ def zscore(arr, k):
     zscore = (arr - np.mean(arr)) / np.std(arr)
     filter = np.abs(zscore) > k
     return np.where(filter)[0]
-
 
 def plotScatter(ax, x, y, title):
     ax.plot(y, '.', color='blue')

@@ -1,9 +1,14 @@
 from utils import *
 
 # Globals
+
+strAcc,strGir,strMag = "Aceleração","Giroscopio","Magnetometro"
+
 dirParts = "../assets/part"
 maxPart = 15
 noOfSensors = 5
+
+indexModule = {strAcc: 1, strGir: 4, strMag: 7}
 
 activityLabels = {
     1: 'Stand', 2: 'Sit', 3: 'Sit and Talk', 4: 'Walk', 5: 'Walk and Talk',
@@ -43,18 +48,33 @@ plt.show()
 # Questão 3.6
 # variables --
 chosenParticipant = 0
-chosenActivity = 1
+chosenActivity = 2
 chosenSensorId = 1
 # ------------
-data = extractPartData(dirParts, chosenParticipant)
+#data = extractPartData(dirParts, chosenParticipant)
 
 # ignore activityId, sensorId and timestamp
-device_data = getActivityData(data, chosenActivity, chosenSensorId)[:, 1:-2]
+#device_data = getActivityData(data, chosenActivity, chosenSensorId)[:, 1:-2]
 
 # acc data for chosenActivity only
 # kmeans1(device_data[:, :3], 3, 10)
 # https://www.youtube.com/watch?v=_aWzGGNrcic
-centroids, groups = kmeans2(device_data[:, :3], 3, 1)
-plotKmeans(device_data[:, :3], centroids, groups)
+# centroids, groups = kmeans2(device_data[:, :3], 3, 1)
+# plotKmeans(device_data[:, :3], centroids, groups)
+
+
+"""
+
+3.8 - Inserção de Outliers
+
+partData = extractPartData(dirParts, chosenParticipant)
+actSensData = getActivityData(partData, chosenActivity,chosenSensorId)
+sampleData = getVectorModule(actSensData,indexModule[strAcc])
+
+"""
+
+#3.9 - Modulo linear
+
+
 
 print("Done")
