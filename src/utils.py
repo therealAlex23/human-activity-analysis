@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from numpy.lib.scimath import log
-from numpy.linalg.linalg import norm
 from scipy import stats
 
 
@@ -312,8 +310,8 @@ def makeGraphTitle(part, act, sensor, devId):
     return f"[Part{part}] '{act}' - <{sensor}> {devId}"
 
 
-def plotDistribution(arr, nbins, ax, title):
-    ax.hist(arr, nbins)
+def plotDistribution(arr, ax, title):
+    ax.hist(arr, sturge(len(arr)))
     ax.set_title(title)
 
 

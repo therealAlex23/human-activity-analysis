@@ -100,53 +100,54 @@ plt.show()
 # NH = Normal distribution and
 # our data's underlying distribution are the same
 # variables --
-chosenParticipant = 0
-chosenActivity = 1
+chosenActivity = 16
 chosenSensorId = 1
-pvalue = 0.05  # if pvalue <= 0.05, then NH is rejected
+default_pvalue = 0.05  # if pvalue <= 0.05, then NH is rejected
 # ------------
 
-data = extractPartData(dirParts, chosenParticipant)
+for participant in range(maxPart):
+    data = extractPartData(dirParts, participant)
 
-# get acc, gyro, mag vector modules
-# sensorData[0] = acc mod, etc
-sensorData = [
-    getVectorModule(
-        getActivityData(
-            data,
-            chosenActivity,
-            chosenSensorId),
-        i)
-    for i in range(1, 8, 3)]
+    # get acc (sensorData[0]), gyro (sensorData[1]),
+    # and mag (sensorData[1]) vector modules
+    sensorData = [
+        getVectorModule(
+            getActivityData(
+                data,
+                chosenActivity,
+                chosenSensorId),
+            i)
+        for i in range(1, 8, 3)]
+    rejected, accepted = 0, 0
+    for i in range(len(sensorData)):
+        title = makeGraphTitle(
+            participant,
+            activityLabels.get(chosenActivity),
+            labels[i],
+            deviceID.get(chosenSensorId)
+        )
+        statistic, measured_pvalue = ksTest(normalizeCurve(sensorData[i]))
+        print(
+            title +
+            f": mean={np.mean(sensorData[i])}, statistic={statistic}, pvalue={measured_pvalue}"
+        )
+        if measured_pvalue <= default_pvalue:
+            rejected += 1
+        else:
+            accepted += 1
+            fig, axs = plt.subplots(2)
+            plotDistribution(
+                normalizeCurve(sensorData[i]),
+                axs[0],
+                title
+            )
+            plotCdfFit(
+                axs[1],
+                np.sort(normalizeCurve(sensorData[i])),
+                np.linspace(-5, 5, 100),  # settings for 'norm' distribution
+                title
+            )
+            plt.subplots_adjust(hspace=0.50)
+    plt.show()
 
-fig, axs = plt.subplots(3, 2)
-
-for i in range(len(sensorData)):
-    title = makeGraphTitle(
-        chosenParticipant,
-        activityLabels.get(chosenActivity),
-        labels[i],
-        deviceID.get(chosenSensorId)
-    )
-
-    statistic, pvalue = ksTest(normalizeCurve(sensorData[i]))
-    print(
-        title +
-        f": mean={np.mean(sensorData[i])}, statistic={statistic}, pvalue={pvalue}"
-    )
-
-    plotDistribution(
-        normalizeCurve(sensorData[i]),
-        sturge(len(sensorData[i])),
-        axs[i][0],
-        title
-    )
-    plotCdfFit(
-        axs[i][1],
-        np.sort(normalizeCurve(sensorData[i])),
-        np.linspace(-5, 5, 100),  # settings for 'norm' distribution
-        title
-    )
-
-plt.show()
 print("Done")
