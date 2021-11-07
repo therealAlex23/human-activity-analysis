@@ -100,11 +100,12 @@ plt.show()
 # NH = Normal distribution and
 # our data's underlying distribution are the same
 # variables --
+"""
 chosenActivity = 16
 chosenSensorId = 1
 default_pvalue = 0.05  # if pvalue <= 0.05, then NH is rejected
 # ------------
-
+rejected, accepted = 0, 0
 for participant in range(maxPart):
     data = extractPartData(dirParts, participant)
 
@@ -118,7 +119,6 @@ for participant in range(maxPart):
                 chosenSensorId),
             i)
         for i in range(1, 8, 3)]
-    rejected, accepted = 0, 0
     for i in range(len(sensorData)):
         title = makeGraphTitle(
             participant,
@@ -149,5 +149,86 @@ for participant in range(maxPart):
             )
             plt.subplots_adjust(hspace=0.50)
     plt.show()
+    print(
+        title +
+        f": accepted={accepted}, rejected={rejected}"
+    )
+"""
+
+
+# Questão 4.2
+# variables --
+chosenParticipant = 1
+chosenSensorId = 1
+
+f = 51.2  # as described in dataset
+windowDuration = 2  # 2 second-long window
+windowSize = round(windowDuration * f)
+overlap = windowSize // 2  # 50% overlap as described in https://bit.ly/tcd-paper
+# ------------
+
+data = extractPartData(dirParts, chosenParticipant)
+sensorData = data[data[:, 0] == chosenSensorId]
+
+# store array of windows for each activity
+windows = getWindows(
+    {k: [] for k in activityLabels.keys()},
+    windowSize,
+    overlap,
+    sensorData
+)
+
+for i in range(1, 17):
+    print(len(windows[i]))
+
+# list of statistical features
+stats = [
+    np.mean, np.median, np.std,
+    stats.skew, stats.kurtosis,
+    stats.iqr, np.var, zcr
+]
+
+# list of physical features
+phys = [
+
+]
+
+"""
+for w in windows[13]:
+    accStats = getStatFeat(stats, w, 1, 3)
+    print(accStats)
+"""
+
+for act, win in windows.items():
+    cnt = 0
+    if len(win):
+        print(makeGraphTitle(
+            chosenParticipant,
+            act,
+            "ACC",
+            chosenSensorId)
+        )
+    for w in win:
+        # statistical features
+        accStats = getStatFeats(stats, w, 1, 3)
+        print(f"Window {cnt}:")
+        print(f"Stats: {accStats}" + "\n")
+        cnt += 1
+
+        # physical features
+
+
+# mi
+# sma
+# eva
+# cagh
+# avh
+# avg
+# aratg
+# df
+# energy
+# aae
+# are
+
 
 print("Done")

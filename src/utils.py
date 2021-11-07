@@ -334,3 +334,51 @@ def plotCdfFit(ax, arr, x, title):
     plt.legend()
     ax.set_title(title)
     plt.xlim([x[0], x[len(x) - 1]])
+
+
+def getWindows(windows, winsize, inc, data):
+    """
+    Split data stream into fixed-size windows
+    Returns a dictionary with
+    (activity, array of intervals where a given
+    activity is performed) pairs
+    """
+    for i in range(0, len(data) - winsize, inc):
+        if data[i, -1] == data[i + winsize, -1]:
+            if len(windows[data[i, -1]]) == 0:
+                windows[data[i, -1]] = [data[i:i+winsize, :]]
+            else:
+                windows[data[i, -1]] = np.append(
+                    windows[data[i, -1]],
+                    [data[i:i+winsize, :]],
+                    axis=0
+                )
+    return windows
+
+
+def zcr(w):
+    """
+    Computes Zero-Crossing rate.
+    """
+    return np.nonzero(np.diff(w > 0))[0].shape[0] / len(w)
+
+
+def getStat(f, w, si, fi):
+    """
+    Returns an array of length 3,
+    with values of 'w' computed by 'f'
+    """
+    return [round(f(w[:, i]), 5) for i in range(si, fi+1)]
+
+
+def getStatFeats(funcs, win, si, fi):
+    """
+    Given a window array 'win',
+    a list of functions to compute values 'funcs',
+    and starting (index of x coordinate) and finish indexes
+    (index of y coordinate) - respectively 'si', 'fi') -,
+    this function returns a dictionary with:
+    key = function name;
+    value = [function(x), function(y), function(z)]
+    """
+    return {str(f.__name__).rsplit('.', 1)[-1]: getStat(f, win, si, fi) for f in funcs}
