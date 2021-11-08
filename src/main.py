@@ -158,8 +158,9 @@ for participant in range(maxPart):
 
 # Questão 4.2
 # variables --
-chosenParticipant = 1
-chosenSensorId = 1
+chosenParticipant = 0
+chosenSensorId = 4
+debug = True
 
 f = 51.2  # as described in dataset
 windowDuration = 2  # 2 second-long window
@@ -178,44 +179,48 @@ windows = getWindows(
     sensorData
 )
 
+"""
 for i in range(1, 17):
     print(len(windows[i]))
-
-# list of statistical features
-stats = [
-    np.mean, np.median, np.std,
-    stats.skew, stats.kurtosis,
-    stats.iqr, np.var, zcr
-]
-
-# list of physical features
-phys = [
-
-]
-
-"""
 for w in windows[13]:
     accStats = getStatFeat(stats, w, 1, 3)
     print(accStats)
 """
 
-for act, win in windows.items():
-    cnt = 0
-    if len(win):
-        print(makeGraphTitle(
-            chosenParticipant,
-            act,
-            "ACC",
-            chosenSensorId)
-        )
-    for w in win:
-        # statistical features
-        accStats = getStatFeats(stats, w, 1, 3)
-        print(f"Window {cnt}:")
-        print(f"Stats: {accStats}" + "\n")
-        cnt += 1
+# list of statistical features
+stats = [
+    np.mean, np.median, np.std,
+    stats.skew, stats.kurtosis,
+    stats.iqr, np.var, zcr, df,
+    energy
+]
 
-        # physical features
+# list of physical features
+phys = []
+
+""" for act, win in windows.items():
+    cnt = 0
+    print(
+        makeGraphTitle(
+            chosenParticipant,
+            activityLabels[act],
+            "ACC + GYRO + MAG",
+            chosenSensorId)
+    ) """
+cnt = 0
+for w in windows[16]:
+    print(f"Window {cnt}:")
+    # statistical features
+    accStats = getStatFeats(stats, w, 1, 3)
+    gyroStats = getStatFeats(stats, w, 4, 6)
+    magStats = getStatFeats(stats, w, 7, 9)
+    if debug:
+        print(f"Acc Stats: {accStats}")
+        print(f"Gyro Stats: {gyroStats}")
+        print(f"Mag Stats: {magStats}")
+
+    # physical features
+    cnt += 1
 
 
 # mi

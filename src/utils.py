@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import stats
+from scipy import stats, fft, signal
 
 
 def extractPartData(dir, numPart):
@@ -363,12 +363,39 @@ def zcr(w):
     return np.nonzero(np.diff(w > 0))[0].shape[0] / len(w)
 
 
+def dft(w):
+    """
+    Returns Discrete Fourier Transform and frequencies.
+    """
+    return fft.rfftfreq(len(w)), fft.rfft(w)
+    # return signal.welch(w, 51.2, nperseg=len(w))
+
+
+def energy(w):
+    """
+    Returns energy of signal.
+    Taken from https://stackoverflow.com/questions/29429733/cant-find-the-right-energy-using-scipy-signal-welch
+    """
+    # _, pxx = dft(w)
+    # return sum(pxx ** 2 / len(w))
+    _, fft = dft(w)
+    return np.sum(np.abs(fft) ** 2) / len(w)
+
+
+def df(w):
+    """
+    Returns energy of dominant freq of the signal.
+    """
+    freqs, fft = dft(w)
+    return freqs[np.argmax(fft ** 2)]
+
+
 def getStat(f, w, si, fi):
     """
-    Returns an array of length 3,
+    Returns an array of length 3 (x, y, z),
     with values of 'w' computed by 'f'
     """
-    return [round(f(w[:, i]), 5) for i in range(si, fi+1)]
+    return [round(f(w[:, i]), 6) for i in range(si, fi+1)]
 
 
 def getStatFeats(funcs, win, si, fi):
@@ -376,7 +403,7 @@ def getStatFeats(funcs, win, si, fi):
     Given a window array 'win',
     a list of functions to compute values 'funcs',
     and starting (index of x coordinate) and finish indexes
-    (index of y coordinate) - respectively 'si', 'fi') -,
+    (index of y coordinate), inclusive - respectively 'si', 'fi' -,
     this function returns a dictionary with:
     key = function name;
     value = [function(x), function(y), function(z)]
