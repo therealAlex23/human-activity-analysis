@@ -187,7 +187,9 @@ for w in windows[13]:
     print(accStats)
 """
 
-# list of statistical features
+# df & energy are not statfeatures
+# but are computed for each axis,
+# like the other metrics in this list
 stats = [
     np.mean, np.median, np.std,
     stats.skew, stats.kurtosis,
@@ -196,7 +198,11 @@ stats = [
 ]
 
 # list of physical features
-phys = []
+phys = [
+    ai, sma, aae,
+    are, avhd, avgd,
+    cagh
+]
 
 """ for act, win in windows.items():
     cnt = 0

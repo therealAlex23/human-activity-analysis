@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats, fft, signal
+from scipy.integrate._ivp.common import norm
 
 
 def extractPartData(dir, numPart):
@@ -197,7 +198,6 @@ def kmeans2(arr, n):
 
     # para n=3, cada linha = [d(c1->p1) d(c2->p1) d(c3->p1)]
     distances = np.zeros([arr.shape[0], n])
-
     while True:
         # distancia de cada centroide a cada ponto
         for i, c in enumerate(centroids):
@@ -211,8 +211,7 @@ def kmeans2(arr, n):
         old_centroids = centroids
         for j in range(n):
             centroids[j] = np.mean(arr[j == groups], 0)
-
-        if ((old_centroids == centroids).all()):
+        if (old_centroids == centroids).all():
             break
     return centroids, groups
 
@@ -388,6 +387,58 @@ def df(w):
     """
     freqs, fft = dft(w)
     return freqs[np.argmax(fft ** 2)]
+
+
+def cagh(xyz):
+    """
+    Compute Correlation between Acceleration
+    along Gravity and Heading Directions.
+    Gravity direction is parallel
+    to the 'x' axis, and heading direction
+    is a combo of the 'y' and 'z' axes.
+
+    Receives 3 columns as input: x, y, and z.
+    Outputs correlation coefficient.
+    """
+    return np.corrcoef(
+        np.sqrt(xyz[1] ** 2, xyz[2] ** 2), xyz[0]
+    )[0, 1]
+
+
+def avgd(x, windur, t):
+    """
+    Computes Averaged Velocity along
+    Gravity Direction.
+    'arr' = gravity direction vector (x axis)
+    """
+    return np.trapz(x, np.linspace(0, windur - t, t)) / t
+
+
+def avhd(y, z, windur, t):
+    """
+    Computes Averaged Velocity along
+    Heading Direction (y + z)
+    """
+    return np.linalg.norm(
+        avgd(y, windur, t) +
+        avgd(z, windur, t)
+    )
+
+
+def ai():
+    pass
+
+
+def sma():
+    pass
+
+
+def aae():
+    pass
+
+
+def are():
+    pass
 
 
 def getStat(f, w, si, fi):
