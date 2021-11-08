@@ -160,11 +160,11 @@ for participant in range(maxPart):
 # variables --
 chosenParticipant = 0
 chosenSensorId = 4
-debug = True
+debug = False
 
-f = 51.2  # as described in dataset
+sFreq = 51.2  # as described in dataset
 windowDuration = 2  # 2 second-long window
-windowSize = round(windowDuration * f)
+windowSize = round(windowDuration * sFreq)
 overlap = windowSize // 2  # 50% overlap as described in https://bit.ly/tcd-paper
 # ------------
 
@@ -199,9 +199,9 @@ stats = [
 
 # list of physical features
 phys = [
-    ai, sma, aae,
-    are, avhd, avgd,
-    cagh
+    cagh, avgd, avhd,
+    ai, sma, eva,
+    # ae, # aratg
 ]
 
 """ for act, win in windows.items():
@@ -214,32 +214,28 @@ phys = [
             chosenSensorId)
     ) """
 cnt = 0
-for w in windows[16]:
+for w in windows[14]:
     print(f"Window {cnt}:")
+
     # statistical features
-    accStats = getStatFeats(stats, w, 1, 3)
-    gyroStats = getStatFeats(stats, w, 4, 6)
-    magStats = getStatFeats(stats, w, 7, 9)
+    accStats = getFeatures(stats, w, 1, 3)
+    gyroStats = getFeatures(stats, w, 4, 6)
+    magStats = getFeatures(stats, w, 7, 9)
+
+    # physical features - returns 3 equal columns
+    # so we only need the first one
+    accPhys = getFeatures(phys, w, 1, 3, method='all')
+    gyroPhys = getFeatures(phys, w, 4, 6, method='all')
+    magPhys = getFeatures(phys, w, 7, 9, method='all')
+
     if debug:
         print(f"Acc Stats: {accStats}")
         print(f"Gyro Stats: {gyroStats}")
         print(f"Mag Stats: {magStats}")
+        print(f"Acc Phys: {accPhys}")
+        print(f"Gyro Phys: {gyroPhys}")
+        print(f"Mag Phys: {magPhys}")
 
-    # physical features
     cnt += 1
-
-
-# mi
-# sma
-# eva
-# cagh
-# avh
-# avg
-# aratg
-# df
-# energy
-# aae
-# are
-
 
 print("Done")

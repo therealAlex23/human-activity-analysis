@@ -1,7 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats, fft, signal
-from scipy.integrate._ivp.common import norm
+import vg
+
+# -- globals
+sFreq, windowDuration = 51.2, 2
 
 
 def extractPartData(dir, numPart):
@@ -401,55 +404,101 @@ def cagh(xyz):
     Outputs correlation coefficient.
     """
     return np.corrcoef(
-        np.sqrt(xyz[1] ** 2, xyz[2] ** 2), xyz[0]
+        np.sqrt(xyz[:, 1] ** 2 + xyz[:, 2] ** 2), xyz[:, 0]
     )[0, 1]
 
 
-def avgd(x, windur, t):
+def avgd(xyz, col='x', windur=windowDuration, t=1/sFreq):
     """
     Computes Averaged Velocity along
-    Gravity Direction.
-    'arr' = gravity direction vector (x axis)
+    given Direction.
+    Default is 'x'-axis' direction.
     """
-    return np.trapz(x, np.linspace(0, windur - t, t)) / t
+    if col == 'x':
+        return np.trapz(xyz[:, 0], np.arange(0, windur - t, t)) / windur
+    elif col == 'y':
+        return np.trapz(xyz[:, 1], np.arange(0, windur - t, t)) / windur
+    elif col == 'z':
+        return np.trapz(xyz[:, 2], np.arange(0, windur - t, t)) / windur
 
 
-def avhd(y, z, windur, t):
+def avhd(xyz, windur=windowDuration, t=1/sFreq):
     """
     Computes Averaged Velocity along
     Heading Direction (y + z)
     """
-    return np.linalg.norm(
-        avgd(y, windur, t) +
-        avgd(z, windur, t)
+    return np.sqrt(
+        avgd(xyz, 'y', windur, t) ** 2 +
+        avgd(xyz, 'z', windur, t) ** 2
     )
 
 
-def ai():
+def ai(xyz):
+    """
+    Computes Average Movement Intensity.
+    """
+    mi = np.linalg.norm(xyz, axis=1)
+    return np.sum(mi) / len(xyz)
+
+
+def sma(xyz):
+    """
+    Computes Normalized Signal Magnitude
+    Area.
+    Receives 3 columns (x, y, z) as input
+    and outputs a single column.
+    """
+    return np.sum(np.abs(xyz) / len(xyz))
+
+
+def ae(xyz):
+    """
+    Pass acc (to get 'aae') or
+    gyro (to get 'are') vector to
+    this function!
+    """
+    return np.sum(energy(xyz)) / 3
+
+
+def eva(xyz):
+    """
+    Returns the top two eigenvalues,
+    which correspond to heading direction
+    and the vertical direction.
+    """
+    covm = np.cov(xyz.T, bias=True)
+    return round(covm[0, 0], 6), round(covm[2, 2], 6)
+
+
+def aratg(xyz):
+    """
+    Computes the Averaged Rotation Angles related
+    to Gravity Direction.
+    Captures the rotation movement of
+    the human torso around the x-axis.
+    Pass gyro data to this function!
+    """
     pass
 
 
-def sma():
-    pass
-
-
-def aae():
-    pass
-
-
-def are():
-    pass
-
-
-def getStat(f, w, si, fi):
+def getFeature(f, w, si, fi, method='single'):
     """
     Returns an array of length 3 (x, y, z),
-    with values of 'w' computed by 'f'
+    with values of 'w' computed by 'f'.
+    method = 'single' computes value for a
+    single axis.
+    If method = 'all', computes value for
+    x, y and z.
     """
+    if method == 'all':
+        out = f(w[:, si:fi+1])
+        if isinstance(out, tuple):
+            return out
+        return round(out, 6)
     return [round(f(w[:, i]), 6) for i in range(si, fi+1)]
 
 
-def getStatFeats(funcs, win, si, fi):
+def getFeatures(funcs, win, si, fi, method='single'):
     """
     Given a window array 'win',
     a list of functions to compute values 'funcs',
@@ -459,4 +508,6 @@ def getStatFeats(funcs, win, si, fi):
     key = function name;
     value = [function(x), function(y), function(z)]
     """
-    return {str(f.__name__).rsplit('.', 1)[-1]: getStat(f, win, si, fi) for f in funcs}
+    if method == 'all':
+        return {str(f.__name__).rsplit('.', 1)[-1]: getFeature(f, win, si, fi, method='all') for f in funcs}
+    return {str(f.__name__).rsplit('.', 1)[-1]: getFeature(f, win, si, fi) for f in funcs}
