@@ -160,10 +160,10 @@ for participant in range(maxPart):
 # variables --
 chosenParticipant = 0
 chosenSensorId = 4
-debug = False
+debug = True
 
 sFreq = 51.2  # as described in dataset
-windowDuration = 2  # 2 second-long window
+windowDuration = 2  # seconds
 windowSize = round(windowDuration * sFreq)
 overlap = windowSize // 2  # 50% overlap as described in https://bit.ly/tcd-paper
 # ------------
@@ -187,9 +187,10 @@ for w in windows[13]:
     print(accStats)
 """
 
-# df & energy are not statfeatures
-# but are computed for each axis,
-# like the other metrics in this list
+# df and energy are not
+# statistical features but are
+# computed for each axis, like
+# the other metrics in this list.
 stats = [
     np.mean, np.median, np.std,
     stats.skew, stats.kurtosis,
@@ -197,45 +198,51 @@ stats = [
     energy
 ]
 
-# list of physical features
+# list of general physical features
 phys = [
-    cagh, avgd, avhd,
-    ai, sma, eva,
-    # ae, # aratg
+    cagh, avgd,
+    avhd, eva,  # aratg
 ]
 
-""" for act, win in windows.items():
+for act, win in windows.items():
     cnt = 0
     print(
         makeGraphTitle(
             chosenParticipant,
             activityLabels[act],
             "ACC + GYRO + MAG",
-            chosenSensorId)
-    ) """
-cnt = 0
-for w in windows[14]:
-    print(f"Window {cnt}:")
+            chosenSensorId))
+    for w in win:
+        print(f"Window {cnt}:")
 
-    # statistical features
-    accStats = getFeatures(stats, w, 1, 3)
-    gyroStats = getFeatures(stats, w, 4, 6)
-    magStats = getFeatures(stats, w, 7, 9)
+        # statistical features
+        accStats = getFeatures(stats, w, 1, 3)
+        gyroStats = getFeatures(stats, w, 4, 6)
+        magStats = getFeatures(stats, w, 7, 9)
 
-    # physical features - returns 3 equal columns
-    # so we only need the first one
-    accPhys = getFeatures(phys, w, 1, 3, method='all')
-    gyroPhys = getFeatures(phys, w, 4, 6, method='all')
-    magPhys = getFeatures(phys, w, 7, 9, method='all')
+        # physical features for each sensor
+        accPhys = getFeatures([ai, sma], w, 1, 3, method='all')
+        gyroPhys = getFeatures([ai, sma], w, 4, 6, method='all')
+        magPhys = getFeatures([ai, sma], w, 7, 9, method='all')
 
-    if debug:
-        print(f"Acc Stats: {accStats}")
-        print(f"Gyro Stats: {gyroStats}")
-        print(f"Mag Stats: {magStats}")
-        print(f"Acc Phys: {accPhys}")
-        print(f"Gyro Phys: {gyroPhys}")
-        print(f"Mag Phys: {magPhys}")
+        # general physical features
+        # only 'are' isn't computed over acc data
+        physFeatures = getFeatures(phys, w, 1, 3, method='all')
+        physFeatures['aae'] = round(ae(w[:, 1:4]), 6)
+        physFeatures['are'] = round(ae(w[:, 4:7]), 6)
 
-    cnt += 1
+        if debug:
+            print(f"Acc Stats: {accStats}")
+            print(f"Gyro Stats: {gyroStats}")
+            print(f"Mag Stats: {magStats}")
+            print(f"Acc Phys: {accPhys}")
+            print(f"Gyro Phys: {gyroPhys}")
+            print(f"Mag Phys: {magPhys}")
+            print(f"physFeatures: {physFeatures}")
+
+        cnt += 1
+
+# -- todo: passar as features
+# -- para uma df de pandas
 
 print("Done")

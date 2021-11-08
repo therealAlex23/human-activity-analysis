@@ -370,7 +370,7 @@ def dft(w):
     Returns Discrete Fourier Transform and frequencies.
     """
     return fft.rfftfreq(len(w)), fft.rfft(w)
-    # return signal.welch(w, 51.2, nperseg=len(w))
+    # return signal.welch(w, sFreq, nperseg=len(w))
 
 
 def energy(w):
@@ -378,6 +378,7 @@ def energy(w):
     Returns energy of signal.
     Taken from https://stackoverflow.com/questions/29429733/cant-find-the-right-energy-using-scipy-signal-welch
     """
+    # -- welch
     # _, pxx = dft(w)
     # return sum(pxx ** 2 / len(w))
     _, fft = dft(w)
