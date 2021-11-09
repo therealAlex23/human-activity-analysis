@@ -18,7 +18,7 @@ deviceID = {1: 'Pulso Esquerdo', 2: 'Pulso direito', 3: 'Peito',
             4: 'Perna superior direita', 5: 'Perna inferior esquerda'
             }
 
-labels = ["ACC", "GYRO", "MOD"]
+labels = ["ACC", "GYRO", "MAG"]
 
 # Questao 2 - Importação de Dados
 # allData = getAllPartData(dirParts + "part", maxPart)
@@ -60,7 +60,6 @@ fig.suptitle(
 plt.show()
 """
 
-
 # Questão 3.6
 # variables --
 """
@@ -94,7 +93,6 @@ ax.set_title(
     f"Part {chosenParticipant}/{activityLabels.get(chosenActivity)}/{deviceID.get(chosenSensorId)}")
 plt.show()
 """
-
 
 # Questão 4.1
 # NH = Normal distribution and
@@ -155,12 +153,11 @@ for participant in range(maxPart):
     )
 """
 
-
 # Questão 4.2
 # variables --
 chosenParticipant = 0
 chosenSensorId = 4
-debug = True
+debug = False
 
 sFreq = 51.2  # as described in dataset
 windowDuration = 2  # seconds
@@ -168,6 +165,7 @@ windowSize = round(windowDuration * sFreq)
 overlap = windowSize // 2  # 50% overlap as described in https://bit.ly/tcd-paper
 # ------------
 
+"""
 data = extractPartData(dirParts, chosenParticipant)
 sensorData = data[data[:, 0] == chosenSensorId]
 
@@ -179,7 +177,6 @@ windows = getWindows(
     sensorData
 )
 
-"""
 for i in range(1, 17):
     print(len(windows[i]))
 for w in windows[13]:
@@ -201,46 +198,33 @@ stats = [
 # list of general physical features
 phys = [
     cagh, avgd,
-    avhd, eva,  # aratg
+    avhd,  # aratg
 ]
 
-for act, win in windows.items():
-    cnt = 0
-    print(
-        makeGraphTitle(
-            chosenParticipant,
-            activityLabels[act],
-            "ACC + GYRO + MAG",
-            chosenSensorId))
-    for w in win:
-        print(f"Window {cnt}:")
+alldata = []
 
-        # statistical features
-        accStats = getFeatures(stats, w, 1, 3)
-        gyroStats = getFeatures(stats, w, 4, 6)
-        magStats = getFeatures(stats, w, 7, 9)
+for participant in range(4, 5):
+    data = extractPartData(dirParts, participant)
+    sensorData = data[data[:, 0] == chosenSensorId]
+    # store array of windows for each activity
+    windows = getWindows(
+        {k: [] for k in activityLabels.keys()},
+        windowSize,
+        overlap,
+        sensorData
+    )
+    for act, win in windows.items():
+        for w in win:
+            alldata.append(
+                getWindowData(w, stats, phys)
+                + [activityLabels.get(act)]  # append activity name in the end
+            )
 
-        # physical features for each sensor
-        accPhys = getFeatures([ai, sma], w, 1, 3, method='all')
-        gyroPhys = getFeatures([ai, sma], w, 4, 6, method='all')
-        magPhys = getFeatures([ai, sma], w, 7, 9, method='all')
+dataset = pd.DataFrame(alldata, columns=getColumns(labels, stats, phys))
+print(dataset)
 
-        # general physical features
-        # only 'are' isn't computed over acc data
-        physFeatures = getFeatures(phys, w, 1, 3, method='all')
-        physFeatures['aae'] = round(ae(w[:, 1:4]), 6)
-        physFeatures['are'] = round(ae(w[:, 4:7]), 6)
-
-        if debug:
-            print(f"Acc Stats: {accStats}")
-            print(f"Gyro Stats: {gyroStats}")
-            print(f"Mag Stats: {magStats}")
-            print(f"Acc Phys: {accPhys}")
-            print(f"Gyro Phys: {gyroPhys}")
-            print(f"Mag Phys: {magPhys}")
-            print(f"physFeatures: {physFeatures}")
-
-        cnt += 1
+# print(dataset)
+# dataset = makeParticipantDf(dataset)  # , columns)
 
 # -- todo: passar as features
 # -- para uma df de pandas

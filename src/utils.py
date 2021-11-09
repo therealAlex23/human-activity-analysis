@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from pandas.core.arrays import string_
 from scipy import stats, fft, signal
-import vg
+import pandas as pd
 
 # -- globals
 sFreq, windowDuration = 51.2, 2
@@ -499,6 +500,16 @@ def getFeature(f, w, si, fi, method='single'):
     return [round(f(w[:, i]), 6) for i in range(si, fi+1)]
 
 
+def getFeatureName(f):
+    """
+    Extract feature name as string
+    from array of feature-extracting functions
+    """
+    if isinstance(f, str):
+        return f
+    return str(f.__name__).rsplit('.', 1)[-1]
+
+
 def getFeatures(funcs, win, si, fi, method='single'):
     """
     Given a window array 'win',
@@ -510,5 +521,71 @@ def getFeatures(funcs, win, si, fi, method='single'):
     value = [function(x), function(y), function(z)]
     """
     if method == 'all':
-        return {str(f.__name__).rsplit('.', 1)[-1]: getFeature(f, win, si, fi, method='all') for f in funcs}
-    return {str(f.__name__).rsplit('.', 1)[-1]: getFeature(f, win, si, fi) for f in funcs}
+        return {getFeatureName(f): getFeature(f, win, si, fi, method='all') for f in funcs}
+    return {getFeatureName(f): getFeature(f, win, si, fi) for f in funcs}
+
+
+def flatten(l):
+    """
+    Receives list of lists
+    and returns a list.
+    """
+    out = []
+    for sublist in l:
+        for item in sublist:
+            out.append(item)
+    return out
+
+
+def fetchFeatures(w, features, method):
+    """
+    Wrapper function for
+    retrieving statistical feature values
+    """
+    return (
+        getFeatures(features, w, 1, 3, method=method),
+        getFeatures(features, w, 4, 6, method=method),
+        getFeatures(features, w, 7, 9, method=method)
+    )
+
+
+def getColumns(labels, stats, phys):
+    """
+    Returns a 1d array of feature labels
+    in the dataset.
+    """
+    return [
+        f'{sensor.lower()}_{ax}_{getFeatureName(stat)}'
+        for sensor in labels
+        for stat in stats
+        for ax in ['x', 'y', 'z']
+    ] + [
+        f'{sensor.lower()}_{getFeatureName(ft)}'
+        for sensor in labels
+        for ft in [ai, sma]
+    ] + [
+        f'{getFeatureName(pf)}'
+        for pf in phys + ['evah', 'evag', 'aae', 'are']
+    ] + ['act']
+
+
+def getWindowData(w, stats, phys):
+    """
+    Given a window 'w', returns info
+    for all sensors, in every axis.
+    """
+    # statistical features ({key:[x, y, z]})
+    accStats, gyroStats, magStats = fetchFeatures(w, stats, 'single')
+
+    # physical features ({key:[x, y, z]})
+    accPhys, gyroPhys, magPhys = fetchFeatures(w, [ai, sma], 'all')
+
+    # general physical features ({key:value})
+    physFeatures = getFeatures(phys, w, 1, 3, method='all')
+    physFeatures['evah'], physFeatures['evag'] = eva(w[:, 1:4])
+    physFeatures['aae'] = round(ae(w[:, 1:4]), 6)
+    physFeatures['are'] = round(ae(w[:, 4:7]), 6)
+
+    # all info for a given window
+    return flatten(list(accStats.values())) + list(accPhys.values()) + flatten(list(gyroStats.values())) + list(
+        gyroPhys.values()) + flatten(list(magStats.values())) + list(magPhys.values()) + list(physFeatures.values())
