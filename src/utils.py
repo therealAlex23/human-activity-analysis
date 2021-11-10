@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats, fft, signal
 from plotly.express import scatter_3d, scatter
+from sklearn.decomposition import PCA
+
 
 # -- globals
 sFreq, windowDuration = 51.2, 2
@@ -627,3 +629,51 @@ def comparisonPlot(data, ftname, colors, sensor=None, ftname2=None, mode='3d'):
             title=f'{sensor} {ftname} comparison'
         )
     fig.write_html('fig.html', auto_open=True)
+
+
+def doPca(dataset, n_components):
+    pca = PCA(n_components=n_components)
+    pca_dataset = pca.fit_transform(dataset)
+    return pca, pca_dataset
+
+
+def getEvrs(dataset):
+    """
+    Returns EVRs for a different
+    number of PC's
+    """
+    evratios = []
+    for i in range(len(dataset.columns)):
+        pca, _ = doPca(dataset, i)
+        evratios.append(sum(pca.explained_variance_ratio_) * 100)
+    return evratios
+
+
+def findPCs(evratios, accuracy):
+    """
+    Finds index of number
+    of pc's to include in our pca
+    by intersecting the evr % 
+    and the evr's of pca.
+    """
+    return np.argwhere(np.diff(np.sign(
+        evratios - np.repeat(accuracy, len(evratios))
+    ))).flatten()[0]
+
+
+def plotEvrPc(evratios, pc):
+    _, ax = plt.subplots()
+    x = np.arange(len(evratios))
+    ax.plot(x, evratios)
+    ax.plot(x[pc], evratios[pc], 'x', markersize=12,
+            label=f'# of PCs: {x[pc]}')
+    ax.axhline(evratios[pc], color='r', ls='--',
+               label=f'{round(evratios[pc], 2)} % EVR')
+    ax.legend(loc='lower right')
+    ax.set(
+        xlabel='number of PCs',
+        ylabel='explained variance ratio (%)',
+        title='# of PCs vs EVR'
+    )
+    ax.grid()
+    plt.show()

@@ -233,11 +233,12 @@ for participant in range(maxPart):
 
 dataset = pd.DataFrame(alldata, columns=getColumns(labels, stats, phys))
 
+# normalize dataset
 for column in dataset:
     if column != 'act':
         dataset[column] = normalize(dataset[column])
 
-# save dataset in a csv for performance
+# save to csv for performance
 if not path.exists(dirOutput):
     mkdir(dirOutput)
 filepath = path.join(dirOutput, f'dev{chosenSensorId}.csv')
@@ -249,16 +250,15 @@ if not path.exists(filepath):
 """
 
 # -- variables
-chosenSensorId = 1
+# chosenSensorId = 2
 
 # ------------
 
 # read csv and plot graphics
-dataset = pd.read_csv(path.join(dirOutput, f'dev{chosenSensorId}.csv'))
+# dataset = pd.read_csv(path.join(dirOutput, f'dev{chosenSensorId}.csv'))
 
 # generate 16 RGB values
-colors = [hexCode() for i in range(len(activityLabels.values()))]
-# actcolors = list(zip(colors, activityLabels.values()))
+# colors = [hexCode() for i in range(len(activityLabels.values()))]
 
 # stat feature comparison
 """
@@ -304,6 +304,64 @@ comparisonPlot(
 )
 """
 
-# -- todo: PCA analysis
+# Questão 4.3 + 4.4
+# [1] https://towardsdatascience.com/pca-clearly-explained-how-when-why-to-use-it-and-feature-importance-a-guide-in-python-7c274582c37e
+# [2] https://towardsdatascience.com/pca-using-python-scikit-learn-e653f8989e60
+
+# -- variables
+chosenSensorId = 2
+dataset = pd.read_csv(path.join(dirOutput, f'dev{chosenSensorId}.csv'))
+evr = 75
+# ------------
+"""
+- Explained variance ratio has to be > 85% (sum of array).
+If its lower than that, a lot of data is lost, and
+it is not a valid analysis [2].
+- Every pca can have at most min(n_samples, n_features) PC's
+In our case, we have n_samples > n_features = 102, hence,
+we can have at most 102 PC's.
+"""
+# prepare data
+target = dataset['act']  # save activities column
+dataset = dataset.drop(['act'], axis=1)
+
+# In the code below, we apply pca
+# with increasing pc's
+# to find the best tradeoff
+# between performance and information
+
+# for at least 95% EVR, the # of PCs is 47+. We've
+# halved the dimensionality of the problem
+# while only losing 5% of the information.
+# In our opinion, this is a great trade-off
+# between performance and information
+# For at least 75% EVR, the # of PCs is 22+.
+evratios = getEvrs(dataset)
+pcs = findPCs(evratios, evr + 1)
+plotEvrPc(evratios, pcs)
+
+
+# Questão 4.4.2
+# The first component is responsible for most
+# of the variance in the data, and each subsequent
+# component is responsible for increasingly less
+# variance.
+
+# pros and use cases:
+# - pca is useful when there's a lot of features/variables
+# to consider
+# - denoising and data compression
+# - essential for data processing in smaller devices with
+# less computing power, as this technique helps identify
+# the most important variables, and exclude the rest.
+# Less variables -> smaller problem space ->
+# -> less computing power needed -> faster ML data processing.
+
+# cons:
+# - Loss of information: Whenever PCA is used, there's an inherent
+# compromise between performance enhancement and data loss.
+# - Data interpretability: Analyzing PCA's output can be difficult
+# if you don't fully grasp its concept and the data structures
+# involved.
 
 print("Done")
