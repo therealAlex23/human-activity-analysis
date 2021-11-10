@@ -1,3 +1,5 @@
 assets/
+backup/
 outputs/
 *.pdf
+*.html
