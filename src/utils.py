@@ -1,6 +1,9 @@
+from matplotlib import legend
 import numpy as np
+import math
 from mpl_toolkits import mplot3d
 import matplotlib.pyplot as plt
+from numpy.lib.type_check import real
 
 
 def extractPartData(dir, numPart):
@@ -15,7 +18,6 @@ def extractPartData(dir, numPart):
         sensData = np.genfromtxt(fullDir + str(sens) + ".csv", delimiter=',')
         partData = np.append(partData, sensData, axis=0)
     return partData
-
 
 def getAllPartData(dir, maxPart):
     allData = extractPartData(dir, 0)
@@ -89,7 +91,6 @@ def getBoxPlotModuleActivity(moduleName, allData, activities, startIndex, sensor
         dens = (totalOutliers/totalPoints) * 100
 
         print("Densidade de outliers: " + str(dens)+"\n")
-
         setBoxColors(bp, "red")
 
     plt.xticks(range(0, len(ticks) * 5, 5), ticks, rotation='vertical')
@@ -105,51 +106,181 @@ def outliersInsertion(sampleData, densPer,k):
 
     totPoints = len(sampleData)
 
+    #Cacular limites para filtração de outliers
+    #Outlier considerado se estiver fora do intervalo [mean - k* std,mean + k* std]
     limMin = mean - k* std
     limMax = mean + k* std
 
+    #Calcular indices dos inliers para poder selecionar e transformar em outliers
     indicesInliers = np.where((sampleData >= limMin) & (sampleData <= limMax))[0] 
+
+    #Density Percentage --> (totalOutliers/totalPoints) * 100
     numOut = totPoints - len(indicesInliers)
     dataDens = (numOut/totPoints) * 100
 
-    print("Numero total de pontos: "+ str(totPoints))
-    print("Numero total de outliers: "+ str(numOut))
-    print("Densidade: " + str(dataDens))
 
     if dataDens < densPer:
         perChosen = (densPer - dataDens)/100
 
+        #Escolha random dos indices dos valores a transformar em outliers
         numChosenPoints = round(perChosen * len(indicesInliers))
-        print("Numero de inliers escolhidos aleatoriamente: " + str(numChosenPoints))
-
         indicesChosenPoints = np.random.choice(indicesInliers,numChosenPoints,replace = False)
-        
+
+        z = max(np.abs(mean + k * std), np.abs(mean - k * std))
+
         for ind in indicesChosenPoints:
 
             s = np.random.choice([-1,1],1,replace = False)[0]
-
-            maxVal = np.max(np.abs(sampleData))
-            z1 = maxVal - limMin
-            z2 = maxVal - limMax
-            if z1 > z2:
-                z = z1
-            else:
-                z = z2
-
             q = np.random.uniform(low = 0.0, high = z)
             sampleData[ind] = mean + s * k*(std + q)
 
         newNumInliers = np.where((sampleData >= limMin) & (sampleData <= limMax))[0]
         newNumOut = totPoints - len(newNumInliers)
         newDataDens = (newNumOut/totPoints) * 100
-
-        print("NOVA DENSIDADE DA AMOSTRA: " + str(newDataDens))
     
-    return sampleData
+    return indicesChosenPoints,sampleData
 
+def trainLinearModel(mainData,indValPrev,p):
+    
+    matrixX = np.zeros((indValPrev,p+1))
+    matrixX[:,0] = 1
+    matrixY = mainData[p:p+indValPrev]
 
-def linearModule(xData,yData,p):
+    #matriz em cada linha contem os valores anteriores do valor que se quer prever
+    #Ex: MatrizX [1 Yi-1 Yi-2 ... Yi-p]
+    for i in range(indValPrev):
+        sampVal = mainData[i:p+i]
+        matrixX[i,1:] = sampVal[::-1]
+    
+    # B = PseudoInv(X)*Y para se calcular o vetor de Pesos
+    pseudoInvX = np.linalg.pinv(matrixX)
+    slopeVec = np.dot(pseudoInvX,matrixY)
+    return slopeVec
+
+def testLinearModelPrevNextVal(mainData,indOut,p):
+    janela = math.floor(p/2)
+
+    errorVec = []
+
+    #Para os plots
+    realValues = []
+    predValues = []
+
+    slopeVec = trainLinearModel(mainData,len(mainData)-janela,janela)
+
+    for outlier in indOut:
+        #se o indice for 5 e a janela for 6 ou o indice for 1000 e a janela ultrapassar o tamanho dos dados
+        if outlier >= janela and outlier<len(mainData)-janela: 
+
+            prevValOut = np.ones((janela+1)) 
+            prevValOut[1:] = mainData[outlier - janela: outlier][::-1]
+
+            nextValOut = np.ones((janela+1))
+            
+            nextValOut[1:] = mainData[outlier+1:janela+outlier+1][::-1]
+            #Nota: ao inverter a ordem dos valores seguintes o erro quadratico por p piorava
+            #(o outro modelo neste caso especifico obtinha melhores resultados)
+
+            if len(prevValOut) == janela+1 :
+                        
+                #media dos valores previstos das diferentes amostras é o valor previsto final
+                predVal1 = np.dot(prevValOut,slopeVec)
+                predVal2 = np.dot(nextValOut,slopeVec)
+                predVal = (predVal1+predVal2)/2
+
+                newError = pow((predVal - mainData[outlier]), 2)
+
+                errorVec.append(newError)
+                realValues.append(mainData[outlier])
+                predValues.append(pow(newError,0.5) + mainData[outlier])
+
+    #Devolve somatorio dos erros quadraticos demonstra a eficiencia do modelo de uma certa janela de amostra
+    return np.sum(np.array(errorVec)) ,np.array(realValues),np.array(predValues)
+
+def testLinearModelPrevVal(mainData,indOut,p):
+
+    errorVec = []
+    realValues = []
+    predValues = []
+
+    slopeVec = trainLinearModel(mainData,len(mainData)-p,p)
+
+    for outlier in indOut:
+        if outlier >= p: #se o indice for 5 e a janela for 6
+            
+            #amostra P valores anteriores em relacao ao outlier com a primeira coluna com o valor 1
+            prevValOut = np.ones((p+1))
+            prevValOut[1:] = mainData[outlier - p: outlier][::-1]
+            
+            if len(prevValOut) == p+1:
+
+                #Yprev = B0 + B1*Yi-1 .... Bp * Yi-p   
+                predVal = np.dot(prevValOut,slopeVec)
+                newError = pow((predVal - mainData[outlier]), 2)
+
+                errorVec.append(newError)
+                realValues.append(mainData[outlier])
+
+                #Yprev = realVal + erro
+                predValues.append(pow(newError,0.5) + mainData[outlier])
+    
+    return np.sum(np.array(errorVec)) ,np.array(realValues),np.array(predValues)
+
+def plotModelsQuadError(arrPs, arrModels, moduleName):
+    fig = plt.figure()
+    fig.suptitle("Modulo de "+ moduleName + "\nSomatorio erro quadrático em função do tamanho da janela")
+    plt.subplot(2,1,1)
+    plt.plot(arrPs ,arrModels[0])
+    plt.scatter(arrModels[0].index(min(arrModels[0])) + 5, min(arrModels[0]), color="red", label="Menor Erro")
+    plt.legend()
+    plt.title("MODELO p valores aneriores")
+
+    plt.subplot(2,1,2)
+    plt.plot(arrPs ,arrModels[1])
+    plt.scatter(arrModels[1].index(min(arrModels[1])) + 5, min(arrModels[1]), color="red", label="Menor Erro")
+    plt.legend()
+    plt.title("MODELO p/2 valores anteriores e p/2 valores seguintes")
     pass
+
+def testPVals(arrPs,mainData,indOutliers):
+    arrMeanSquareModelPrev = []
+    arrMeanSquareModelPrevNext = []
+    for p in arrPs:
+
+        meanSquareModelPrev, arrRealModelPrev, arrPredictedModelPrev = testLinearModelPrevVal(mainData,indOutliers,p)
+        meanSquareModelPrevNext, arrRealModelPrevNext, arrPredictedModelPrevNext = testLinearModelPrevNextVal(mainData,indOutliers,p)
+
+        arrMeanSquareModelPrev.append(meanSquareModelPrev)
+        arrMeanSquareModelPrevNext.append(meanSquareModelPrevNext)
+        print("Valor do p para janela: " +  str(p)+"\n")
+        print("MODELO P valores aneriores")
+        print("Somatorio Erro quadrático: " + str(meanSquareModelPrev))
+        print("\n-----------------------------\n")
+        print("MODELO p/2 valores anteriores e p/2 valores seguintes")
+        print("Somatorio erro quadrático: " + str(meanSquareModelPrevNext))
+        print("\n\n")
+    #Tuplo com array de valores previstos e array de valores reais pelo modelo linear de p valores anteriores
+    valModelPrev = (arrRealModelPrev,arrPredictedModelPrev)
+
+    #Tuplo com array de valores previstos e array de valores reais pelo modelo linear de p/2 valores anteriores e seguintes
+    valModelPrevNext = (arrRealModelPrevNext,arrPredictedModelPrevNext)
+
+    return arrMeanSquareModelPrev,arrMeanSquareModelPrevNext,valModelPrev,valModelPrevNext
+
+def scatterRealLinePred(real, predicted):
+    plt.plot(range(len(predicted)),predicted,"-r")
+    plt.scatter(range(len(real)),real, color="blue",label=" Valor Real")
+    plt.title("Regression line for prediction model Compared to real values")
+    plt.grid()
+    plt.show()
+
+
+def scatterPlotRealPredicted(real, predicted,moduleName,model):
+    plt.scatter(range(len(predicted)),predicted, color="red",label=" Valor Previsto")
+    plt.scatter(range(len(real)),real, color="blue",label=" Valor Real")
+    plt.legend()
+    plt.title(model + " de Modulo de "+str(moduleName) +  "\nComparação entre valores previstos e reais")
+
 
 def setBoxColors(bp, color):
     plt.setp(bp['boxes'], color=color)

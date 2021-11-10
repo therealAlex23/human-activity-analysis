@@ -1,4 +1,10 @@
+from os import access
+from numpy.core.numeric import outer
+from numpy.lib.function_base import select
 from utils import *
+
+import warnings
+warnings.filterwarnings('ignore')
 
 # Globals
 
@@ -47,9 +53,9 @@ plt.show()
 
 # Questão 3.6
 # variables --
-chosenParticipant = 0
-chosenActivity = 2
-chosenSensorId = 1
+#chosenParticipant = 0
+#chosenActivity = 2
+#chosenSensorId = 1
 # ------------
 #data = extractPartData(dirParts, chosenParticipant)
 
@@ -63,18 +69,114 @@ chosenSensorId = 1
 # plotKmeans(device_data[:, :3], centroids, groups)
 
 
-"""
 
-3.8 - Inserção de Outliers
+#3.8 - Injeçao de Outliers
+"""
 
 partData = extractPartData(dirParts, chosenParticipant)
 actSensData = getActivityData(partData, chosenActivity,chosenSensorId)
 sampleData = getVectorModule(actSensData,indexModule[strAcc])
 
+#Devolve Tuplo com (indices dos outliers, data com outliers)
+outliers = outliersInsertion(sampleData,5,3)
+
 """
 
-#3.9 - Modulo linear
+#3.9 - Modulo linear com base de amostras de p valores anteriores
+
+"""
+sample = np.array([4,3,7,8,2,6,7,9,1,5,10,32,9])
+p = 3
+print(trainLinearModel(sample,len(sample)-p,p))
+
+"""
+
+#3.10 e 3.11 - Modulos Lineares aplicados aos modulos de cada variavel de uma so atividade
+
+#Neste caso vamoos aplicar o LOOCV(Leave one out Cross Validation) -
+#https://www.youtube.com/watch?v=fSytzGwwBVw&ab_channel=StatQuestwithJoshStarmer
+
+chosenAct = 1
+allData  = getAllPartData(dirParts,maxPart)        
+ActData = getActivityData(allData,chosenAct,None)
+
+#Modulos das diferentes variaveis
+AccModData = getVectorModule(ActData,indexModule[strAcc])
+MagModData = getVectorModule(ActData,indexModule[strMag])
+GirModData = getVectorModule(ActData,indexModule[strGir])
+
+k=3.5
+perOut = 10
+janelasVal = range(5,20)
+numPoints = 50
+
+#---------------MODULO DE ACELERAÇÃO--------------------------
+
+#injeçao de outliers para os substituir com o modelo linear preditivo de cada modulo
+#devolve tuplo (indicesOutliers, dataWithOutliers)
+outliersInfoAcc = outliersInsertion(np.copy(AccModData),perOut,k)
+indicesOutliersAcc = outliersInfoAcc[0]
+
+#Teste dos modelos para janelas de diferentes tamanhos
+#Devolve tuplo com o array do somatorio de erros quadraticos para cada janela de cada modelo
+#E com o array de valores previstos de cada modelo juntamente com os valores reais
+infArrAcc = testPVals(janelasVal,AccModData,indicesOutliersAcc)
+
+arrMeanSquareModels = (infArrAcc[0],infArrAcc[1])
+realPredValModelPrev = infArrAcc[2]
+realPredValModelPrevNext  = infArrAcc[3]
+
+#Plots dos modelos em relação ao erro quadratico por janela
+plotModelsQuadError(janelasVal,arrMeanSquareModels,strAcc)
+plt.figure()
+plt.subplot(2,1,1)
+#Scatter dos valores previstos e reais de cada modelo
+scatterPlotRealPredicted(realPredValModelPrev[0][:numPoints],realPredValModelPrev[1][:numPoints],
+                        strAcc,"Modelo Linear de p valores anteriores")
+plt.subplot(2,1,2)
+scatterPlotRealPredicted(realPredValModelPrevNext[0][:numPoints],realPredValModelPrevNext[1][:numPoints],
+                        strAcc,"Modelo Linear p/2 valores anteriores e seguintes")
 
 
+#---------------MODULO DE MAGMETOMETRO--------------------------
+outliersInfoMag = outliersInsertion(np.copy(MagModData),perOut,k)
+indicesOutliersMag = outliersInfoMag[0]
 
+infArrMag = testPVals(janelasVal,MagModData,indicesOutliersMag)
+
+arrMeanSquareModels = (infArrMag[0],infArrMag[1])
+realPredValModelPrev = infArrMag[2]
+realPredValModelPrevNext  = infArrMag[3]
+
+plotModelsQuadError(janelasVal,arrMeanSquareModels,strMag)
+plt.figure()
+plt.subplot(2,1,1)
+
+scatterPlotRealPredicted(realPredValModelPrev[0][:numPoints],realPredValModelPrev[1][:numPoints],
+                        strMag,"Modelo Linear de p valores anteriores")
+plt.subplot(2,1,2)           
+scatterPlotRealPredicted(realPredValModelPrevNext[0][:numPoints],realPredValModelPrevNext[1][:numPoints],
+                        strMag,"Modelo Linear p/2 valores anteriores e seguintes")
+
+#---------------MODULO DE GIROSCOPIO-------------------------
+outliersInfoGir = outliersInsertion(np.copy(GirModData),perOut,k)
+indicesOutliersGir = outliersInfoGir[0]
+
+infArrGir = testPVals(janelasVal,GirModData,indicesOutliersGir)
+
+arrMeanSquareModels = (infArrGir[0],infArrGir[1])
+realPredValModelPrev = infArrGir[2]
+realPredValModelPrevNext  = infArrGir[3]
+
+plotModelsQuadError(janelasVal,arrMeanSquareModels,strGir)
+
+plt.figure()
+plt.subplot(2,1,1)
+scatterPlotRealPredicted(realPredValModelPrev[0][:numPoints],realPredValModelPrev[1][:numPoints],
+                        strGir,"Modelo Linear de p valores anteriores")
+plt.subplot(2,1,2)
+scatterPlotRealPredicted(realPredValModelPrevNext[0][:numPoints],realPredValModelPrevNext[1][:numPoints],
+                        strGir,"Modelo Linear p/2 valores anteriores e seguintes")
+
+plt.show()
 print("Done")
