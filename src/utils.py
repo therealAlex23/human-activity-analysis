@@ -1,8 +1,8 @@
+from random import randint
 import numpy as np
 import matplotlib.pyplot as plt
-from pandas.core.arrays import string_
 from scipy import stats, fft, signal
-import pandas as pd
+from plotly.express import scatter_3d, scatter
 
 # -- globals
 sFreq, windowDuration = 51.2, 2
@@ -525,13 +525,13 @@ def getFeatures(funcs, win, si, fi, method='single'):
     return {getFeatureName(f): getFeature(f, win, si, fi) for f in funcs}
 
 
-def flatten(l):
+def flatten(t):
     """
     Receives list of lists
     and returns a list.
     """
     out = []
-    for sublist in l:
+    for sublist in t:
         for item in sublist:
             out.append(item)
     return out
@@ -589,3 +589,41 @@ def getWindowData(w, stats, phys):
     # all info for a given window
     return flatten(list(accStats.values())) + list(accPhys.values()) + flatten(list(gyroStats.values())) + list(
         gyroPhys.values()) + flatten(list(magStats.values())) + list(magPhys.values()) + list(physFeatures.values())
+
+
+def normalize(a):
+    return (a - a.mean()) / a.std()
+
+
+def hexCode():
+    """
+    Generates random hex code.
+    """
+    return f"#{format(randint(0, 16777215), 'x')}"
+
+
+def comparisonPlot(data, ftname, colors, sensor=None, ftname2=None, mode='3d'):
+    """
+    Replicates the graphs on
+    the cited paper and some more.
+    """
+    if mode == '2d' and ftname2:
+        fig = scatter(
+            data,
+            ftname,
+            ftname2,
+            color_discrete_sequence=colors,
+            color='act',
+            title=f'{ftname}-{ftname2} comparison'
+        )
+    else:
+        fig = scatter_3d(
+            data,
+            f'{sensor}_x_{ftname}',
+            f'{sensor}_y_{ftname}',
+            f'{sensor}_z_{ftname}',
+            color_discrete_sequence=colors,
+            color='act',
+            title=f'{sensor} {ftname} comparison'
+        )
+    fig.write_html('fig.html', auto_open=True)

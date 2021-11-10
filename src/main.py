@@ -1,7 +1,10 @@
 from utils import *
+from os import path, mkdir
+import pandas as pd
 
 # Globals
 dirParts = "../assets/part"
+dirOutput = "../outputs"
 maxPart = 15
 noOfSensors = 5
 
@@ -18,7 +21,7 @@ deviceID = {1: 'Pulso Esquerdo', 2: 'Pulso direito', 3: 'Peito',
             4: 'Perna superior direita', 5: 'Perna inferior esquerda'
             }
 
-labels = ["ACC", "GYRO", "MAG"]
+labels = ["acc", "gyro", "mag"]
 
 # Questao 2 - Importação de Dados
 # allData = getAllPartData(dirParts + "part", maxPart)
@@ -153,16 +156,21 @@ for participant in range(maxPart):
     )
 """
 
-# Questão 4.2
+# Questão 4.2 --
+# Note: uncomment code from this
+# question to generate dataset
+
 # variables --
+"""
+chosenSensorId = 1
 chosenParticipant = 0
-chosenSensorId = 4
 debug = False
 
 sFreq = 51.2  # as described in dataset
 windowDuration = 2  # seconds
 windowSize = round(windowDuration * sFreq)
 overlap = windowSize // 2  # 50% overlap as described in https://bit.ly/tcd-paper
+"""
 # ------------
 
 """
@@ -188,6 +196,7 @@ for w in windows[13]:
 # statistical features but are
 # computed for each axis, like
 # the other metrics in this list.
+"""
 stats = [
     np.mean, np.median, np.std,
     stats.skew, stats.kurtosis,
@@ -200,10 +209,12 @@ phys = [
     cagh, avgd,
     avhd,  # aratg
 ]
+"""
 
+# generate dataset
+"""
 alldata = []
-
-for participant in range(4, 5):
+for participant in range(maxPart):
     data = extractPartData(dirParts, participant)
     sensorData = data[data[:, 0] == chosenSensorId]
     # store array of windows for each activity
@@ -221,12 +232,77 @@ for participant in range(4, 5):
             )
 
 dataset = pd.DataFrame(alldata, columns=getColumns(labels, stats, phys))
-print(dataset)
 
-# print(dataset)
-# dataset = makeParticipantDf(dataset)  # , columns)
+for column in dataset:
+    if column != 'act':
+        dataset[column] = normalize(dataset[column])
 
-# -- todo: passar as features
-# -- para uma df de pandas
+# save dataset in a csv for performance
+if not path.exists(dirOutput):
+    mkdir(dirOutput)
+filepath = path.join(dirOutput, f'dev{chosenSensorId}.csv')
+if not path.exists(filepath):
+    dataset.to_csv(
+        filepath,
+        index=False
+    )
+"""
+
+# -- variables
+chosenSensorId = 1
+
+# ------------
+
+# read csv and plot graphics
+dataset = pd.read_csv(path.join(dirOutput, f'dev{chosenSensorId}.csv'))
+
+# generate 16 RGB values
+colors = [hexCode() for i in range(len(activityLabels.values()))]
+# actcolors = list(zip(colors, activityLabels.values()))
+
+# stat feature comparison
+"""
+# for ft in ['mean', 'median', 'std', 'skew', 'kurtosis']:
+for s in labels:
+    comparisonPlot(
+        dataset,
+        'mean',
+        colors,
+        sensor=s
+    )
+"""
+
+# phys feature comparison
+"""
+comparisonPlot(
+    dataset,
+    'acc_ai',
+    colors,
+    ftname2='acc_sma',
+    mode='2d'
+)
+comparisonPlot(
+    dataset,
+    'gyro_ai',
+    colors,
+    ftname2='gyro_sma',
+    mode='2d'
+)
+comparisonPlot(
+    dataset,
+    'mag_ai',
+    colors,
+    ftname2='mag_sma',
+    mode='2d'
+)
+comparisonPlot(
+    dataset,
+    'evag',
+    colors,
+    ftname2='evah',
+    mode='2d'
+)
+"""
+
 
 print("Done")
