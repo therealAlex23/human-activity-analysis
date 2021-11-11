@@ -307,6 +307,7 @@ comparisonPlot(
 # Questão 4.3 + 4.4
 # [1] https://towardsdatascience.com/pca-clearly-explained-how-when-why-to-use-it-and-feature-importance-a-guide-in-python-7c274582c37e
 # [2] https://towardsdatascience.com/pca-using-python-scikit-learn-e653f8989e60
+# [3] https://youtu.be/kApPBm1YsqU
 
 # -- variables
 chosenSensorId = 2
@@ -316,7 +317,7 @@ evr = 75
 """
 - Explained variance ratio has to be > 85% (sum of array).
 If its lower than that, a lot of data is lost, and
-it is not a valid analysis [2].
+it is not a valid analysis [3].
 - Every pca can have at most min(n_samples, n_features) PC's
 In our case, we have n_samples > n_features = 102, hence,
 we can have at most 102 PC's.
