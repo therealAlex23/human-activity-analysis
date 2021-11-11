@@ -1,4 +1,5 @@
 from matplotlib import legend
+import matplotlib
 import numpy as np
 import math
 from mpl_toolkits import mplot3d
@@ -140,15 +141,54 @@ def outliersInsertion(sampleData, densPer,k):
     
     return indicesChosenPoints,sampleData
 
-def trainLinearModel(mainData,indValPrev,p):
+def trainLinearModelPrevNext(mainData,nSamp,p):
+    janela = math.floor(p/2)
+
+    #se for p = 7 então fica janela = 3
+    #Logo a janela de amostras anteriores vai ser janela + 1 = 4 e os seguintes com a janela = 3
+    #Tem que ser os anteriores os favorecidos pois vale mais a pena ter um valor passado do que um futuro
+
+    if p % 2 == 0:
+        janelaPrev = janela
+        
+    else:
+        janelaPrev = janela + 1
     
-    matrixX = np.zeros((indValPrev,p+1))
+    #Matriz n x p+1 --> +1 coluna de 1s
+    matrixX = np.zeros((nSamp,p+1))
+
+    #p=8 ; janela = p/2 = 4; matrixX na coluna 4 é so 1 e contem os valores seguintes da posiçao 0 a 3 
+    matrixX[:,janela] = 1
+
+    #Para ter matriz Y correta tem começar a partir do elemento em que tem janelaPrev valores anteriores
+    matrixY = mainData[janelaPrev:janelaPrev +nSamp]
+
+    #matriz em cada linha contem os valores anteriores do valor que se quer prever
+    #Ex: MatrizX [Yi+3 Yi+2 Yi+1 1 Yi-1 Yi-2 Yi-3]
+
+    for i in range(nSamp):
+
+        sampValPrev = mainData[i:janelaPrev+i][::-1]
+        sampValNext = mainData[janelaPrev+i+1:janela+janelaPrev+i+1][::-1]
+
+        matrixX[i,:janela] = sampValNext #Antes da coluna do 1 são os seguintes
+        matrixX[i,janela+1:] = sampValPrev #Depois é que são os anteriores
+    
+    # B = PseudoInv(X)*Y para se calcular o vetor de Pesos
+    pseudoInvX = np.linalg.pinv(matrixX)
+    slopeVec = np.dot(pseudoInvX,matrixY)
+    return slopeVec
+    
+
+def trainLinearModelPrev(mainData,n,p):
+    
+    matrixX = np.zeros((n,p+1))
     matrixX[:,0] = 1
-    matrixY = mainData[p:p+indValPrev]
+    matrixY = mainData[p:p+n]
 
     #matriz em cada linha contem os valores anteriores do valor que se quer prever
     #Ex: MatrizX [1 Yi-1 Yi-2 ... Yi-p]
-    for i in range(indValPrev):
+    for i in range(n):
         sampVal = mainData[i:p+i]
         matrixX[i,1:] = sampVal[::-1]
     
@@ -158,36 +198,40 @@ def trainLinearModel(mainData,indValPrev,p):
     return slopeVec
 
 def testLinearModelPrevNextVal(mainData,indOut,p):
-    janela = math.floor(p/2)
-
-    errorVec = []
 
     #Para os plots
+    errorVec = []
     realValues = []
     predValues = []
 
-    slopeVec = trainLinearModel(mainData,len(mainData)-janela,janela)
+    #Retirar os valores com os indices de outliers para o treino do modelo
+    dataWithoutOut = np.delete(np.copy(mainData),indOut)
 
+    slopeVec = trainLinearModelPrevNext(dataWithoutOut,len(dataWithoutOut)-p,p)
+
+    janela = math.floor(p/2)
+
+    if p % 2 == 0:
+        janelaPrev = janela
+        
+    else:
+        janelaPrev = janela + 1
+    
     for outlier in indOut:
-        #se o indice for 5 e a janela for 6 ou o indice for 1000 e a janela ultrapassar o tamanho dos dados
-        if outlier >= janela and outlier<len(mainData)-janela: 
+        #se o indice for 5 e a janela for 6
+        #E se o indice for 1000 e a janela ultrapassar o tamanho dos dados
 
-            prevValOut = np.ones((janela+1)) 
-            prevValOut[1:] = mainData[outlier - janela: outlier][::-1]
+        if outlier >= janelaPrev and outlier < len(mainData)-janela: 
 
-            nextValOut = np.ones((janela+1))
+            #Buscar os janelaPrev valoes anteriores e janela valores seguintes
+            #Depois poe se no formato [Yi+3 Yi+2 .. 1 Yi-1 ...] para se multiplicar com o vetor de Pesos
+            sampleNextPrev = np.ones((p+1))
+            sampleNextPrev[:janela] = mainData[outlier+1: janela + outlier+1][::-1]
+            sampleNextPrev[janela+1:] = mainData[outlier-janelaPrev: outlier][::-1]
             
-            nextValOut[1:] = mainData[outlier+1:janela+outlier+1][::-1]
-            #Nota: ao inverter a ordem dos valores seguintes o erro quadratico por p piorava
-            #(o outro modelo neste caso especifico obtinha melhores resultados)
-
-            if len(prevValOut) == janela+1 :
-                        
-                #media dos valores previstos das diferentes amostras é o valor previsto final
-                predVal1 = np.dot(prevValOut,slopeVec)
-                predVal2 = np.dot(nextValOut,slopeVec)
-                predVal = (predVal1+predVal2)/2
-
+            if len(sampleNextPrev) == p+1:
+                
+                predVal  = np.dot(sampleNextPrev,slopeVec)
                 newError = pow((predVal - mainData[outlier]), 2)
 
                 errorVec.append(newError)
@@ -203,7 +247,10 @@ def testLinearModelPrevVal(mainData,indOut,p):
     realValues = []
     predValues = []
 
-    slopeVec = trainLinearModel(mainData,len(mainData)-p,p)
+    #Retirar os valores com os indices de outliers para o treino do modelo
+    dataWithoutOut = np.delete(np.copy(mainData),indOut)
+    
+    slopeVec = trainLinearModelPrev(dataWithoutOut,len(dataWithoutOut)-p,p)
 
     for outlier in indOut:
         if outlier >= p: #se o indice for 5 e a janela for 6

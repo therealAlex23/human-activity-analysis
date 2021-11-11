@@ -8,7 +8,7 @@ warnings.filterwarnings('ignore')
 
 # Globals
 
-strAcc,strGir,strMag = "Aceleração","Giroscopio","Magnetometro"
+strAcc,strGir,strMag = "Aceleração","Giroscopio","Magnometro"
 
 dirParts = "../assets/part"
 maxPart = 15
@@ -114,12 +114,14 @@ numPoints = 50
 
 #injeçao de outliers para os substituir com o modelo linear preditivo de cada modulo
 #devolve tuplo (indicesOutliers, dataWithOutliers)
+
 outliersInfoAcc = outliersInsertion(np.copy(AccModData),perOut,k)
 indicesOutliersAcc = outliersInfoAcc[0]
 
 #Teste dos modelos para janelas de diferentes tamanhos
 #Devolve tuplo com o array do somatorio de erros quadraticos para cada janela de cada modelo
 #E com o array de valores previstos de cada modelo juntamente com os valores reais
+
 infArrAcc = testPVals(janelasVal,AccModData,indicesOutliersAcc)
 
 arrMeanSquareModels = (infArrAcc[0],infArrAcc[1])
@@ -130,6 +132,7 @@ realPredValModelPrevNext  = infArrAcc[3]
 plotModelsQuadError(janelasVal,arrMeanSquareModels,strAcc)
 plt.figure()
 plt.subplot(2,1,1)
+
 #Scatter dos valores previstos e reais de cada modelo
 scatterPlotRealPredicted(realPredValModelPrev[0][:numPoints],realPredValModelPrev[1][:numPoints],
                         strAcc,"Modelo Linear de p valores anteriores")
@@ -137,8 +140,8 @@ plt.subplot(2,1,2)
 scatterPlotRealPredicted(realPredValModelPrevNext[0][:numPoints],realPredValModelPrevNext[1][:numPoints],
                         strAcc,"Modelo Linear p/2 valores anteriores e seguintes")
 
+#---------------MODULO DE MAGNOMETRO--------------------------
 
-#---------------MODULO DE MAGMETOMETRO--------------------------
 outliersInfoMag = outliersInsertion(np.copy(MagModData),perOut,k)
 indicesOutliersMag = outliersInfoMag[0]
 
@@ -159,6 +162,7 @@ scatterPlotRealPredicted(realPredValModelPrevNext[0][:numPoints],realPredValMode
                         strMag,"Modelo Linear p/2 valores anteriores e seguintes")
 
 #---------------MODULO DE GIROSCOPIO-------------------------
+
 outliersInfoGir = outliersInsertion(np.copy(GirModData),perOut,k)
 indicesOutliersGir = outliersInfoGir[0]
 
@@ -178,5 +182,16 @@ plt.subplot(2,1,2)
 scatterPlotRealPredicted(realPredValModelPrevNext[0][:numPoints],realPredValModelPrevNext[1][:numPoints],
                         strGir,"Modelo Linear p/2 valores anteriores e seguintes")
 
+"""
+
+    Conclusão sobre a comparação dos 2 modelos
+
+        O modelo linear com base em p valores anteriores demonstra bons resultados no entanto
+    o modelo linear com base em p/2 valores anteriores e seguintes apresenta bastante melhores resultados.
+    Logo caso quisesse prever valores para missing data utilizaria o segundo modelo
+
+"""
+
 plt.show()
+
 print("Done")
