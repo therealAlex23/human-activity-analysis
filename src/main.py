@@ -70,7 +70,7 @@ plt.show()
 
 
 
-#3.8 - Injeçao de Outliers
+#3.8 - Outlier Injection
 """
 
 partData = extractPartData(dirParts, chosenParticipant)
@@ -82,7 +82,7 @@ outliers = outliersInsertion(sampleData,5,3)
 
 """
 
-#3.9 - Modulo linear com base de amostras de p valores anteriores
+#3.9 - Linear modulus based on samples of p previous values
 
 """
 sample = np.array([4,3,7,8,2,6,7,9,1,5,10,32,9])
@@ -91,7 +91,7 @@ print(trainLinearModel(sample,len(sample)-p,p))
 
 """
 
-#3.10 e 3.11 - Modulos Lineares aplicados aos modulos de cada variavel de uma so atividade
+#3.10 e 3.11 - Linear Module applied to the moduli of each variable of a single activity
 
 #Neste caso vamoos aplicar o LOOCV(Leave one out Cross Validation) -
 #https://www.youtube.com/watch?v=fSytzGwwBVw&ab_channel=StatQuestwithJoshStarmer
@@ -100,7 +100,8 @@ chosenAct = 1
 allData  = getAllPartData(dirParts,maxPart)        
 ActData = getActivityData(allData,chosenAct,None)
 
-#Modulos das diferentes variaveis
+#Modules of the different variables
+
 AccModData = getVectorModule(ActData,indexModule[strAcc])
 MagModData = getVectorModule(ActData,indexModule[strMag])
 GirModData = getVectorModule(ActData,indexModule[strGir])
@@ -110,17 +111,17 @@ perOut = 10
 janelasVal = range(5,20)
 numPoints = 50
 
-#---------------MODULO DE ACELERAÇÃO--------------------------
+#--------------- ACCELERATION MODULUS  --------------------------
 
-#injeçao de outliers para os substituir com o modelo linear preditivo de cada modulo
-#devolve tuplo (indicesOutliers, dataWithOutliers)
+#inject outliers to replace them with the predictive linear model of each module
+#return tuples (indicesOutliers, dataWithOutliers)
 
 outliersInfoAcc = outliersInsertion(np.copy(AccModData),perOut,k)
 indicesOutliersAcc = outliersInfoAcc[0]
 
-#Teste dos modelos para janelas de diferentes tamanhos
-#Devolve tuplo com o array do somatorio de erros quadraticos para cada janela de cada modelo
-#E com o array de valores previstos de cada modelo juntamente com os valores reais
+# Test the models for different window sizes
+# Returns the array of the sum of quadratic errors for each window of each model
+# And the array of predicted values for each model along with the actual values
 
 infArrAcc = testPVals(janelasVal,AccModData,indicesOutliersAcc)
 
@@ -128,19 +129,19 @@ arrMeanSquareModels = (infArrAcc[0],infArrAcc[1])
 realPredValModelPrev = infArrAcc[2]
 realPredValModelPrevNext  = infArrAcc[3]
 
-#Plots dos modelos em relação ao erro quadratico por janela
+#Plots of the models in relation to the quadratic error per window 
 plotModelsQuadError(janelasVal,arrMeanSquareModels,strAcc)
 plt.figure()
 plt.subplot(2,1,1)
 
-#Scatter dos valores previstos e reais de cada modelo
+#Scatter of predicted and actual values for each model
 scatterPlotRealPredicted(realPredValModelPrev[0][:numPoints],realPredValModelPrev[1][:numPoints],
                         strAcc,"Modelo Linear de p valores anteriores")
 plt.subplot(2,1,2)
 scatterPlotRealPredicted(realPredValModelPrevNext[0][:numPoints],realPredValModelPrevNext[1][:numPoints],
                         strAcc,"Modelo Linear p/2 valores anteriores e seguintes")
 
-#---------------MODULO DE MAGNOMETRO--------------------------
+#--------------- MAGNOMETER MODULE --------------------------
 
 outliersInfoMag = outliersInsertion(np.copy(MagModData),perOut,k)
 indicesOutliersMag = outliersInfoMag[0]
@@ -161,7 +162,7 @@ plt.subplot(2,1,2)
 scatterPlotRealPredicted(realPredValModelPrevNext[0][:numPoints],realPredValModelPrevNext[1][:numPoints],
                         strMag,"Modelo Linear p/2 valores anteriores e seguintes")
 
-#---------------MODULO DE GIROSCOPIO-------------------------
+#--------------- GYRO MODULE -------------------------
 
 outliersInfoGir = outliersInsertion(np.copy(GirModData),perOut,k)
 indicesOutliersGir = outliersInfoGir[0]
@@ -184,11 +185,12 @@ scatterPlotRealPredicted(realPredValModelPrevNext[0][:numPoints],realPredValMode
 
 """
 
-    Conclusão sobre a comparação dos 2 modelos
+     Conclusion on the comparison of the 2 models
 
-        O modelo linear com base em p valores anteriores demonstra bons resultados no entanto
-    o modelo linear com base em p/2 valores anteriores e seguintes apresenta bastante melhores resultados.
-    Logo caso quisesse prever valores para missing data utilizaria o segundo modelo
+        The linear model based on p prior values shows good results however
+    the linear model based on p/2 prior and subsequent values shows much better results
+    and with smaller windows.
+    So if I wanted to predict values for missing data I would use the second model
 
 """
 

@@ -102,28 +102,33 @@ def getBoxPlotModuleActivity(moduleName, allData, activities, startIndex, sensor
 
 def outliersInsertion(sampleData, densPer,k):
 
+    """
+    Injects outliers till the density = densPer
+    
+    An outlier is considered to be the points outside the interval [mean+k*std,mean -k*std]
+
+    """
     mean = np.mean(sampleData)
     std = np.std(sampleData)
 
     totPoints = len(sampleData)
 
-    #Cacular limites para filtração de outliers
-    #Outlier considerado se estiver fora do intervalo [mean - k* std,mean + k* std]
+    # Set limits for outlier filtering
     limMin = mean - k* std
     limMax = mean + k* std
 
-    #Calcular indices dos inliers para poder selecionar e transformar em outliers
+    #Calculate indices of the inliers to be able to select and transform into outliers
     indicesInliers = np.where((sampleData >= limMin) & (sampleData <= limMax))[0] 
 
-    #Density Percentage --> (totalOutliers/totalPoints) * 100
     numOut = totPoints - len(indicesInliers)
     dataDens = (numOut/totPoints) * 100
 
-
+    #if the data density of the data is already bigger than that we want
+    #Then it isnt necessary to inject more outliers
     if dataDens < densPer:
         perChosen = (densPer - dataDens)/100
 
-        #Escolha random dos indices dos valores a transformar em outliers
+        #Random choice of the indices of the values to transform into outliers
         numChosenPoints = round(perChosen * len(indicesInliers))
         indicesChosenPoints = np.random.choice(indicesInliers,numChosenPoints,replace = False)
 
@@ -144,9 +149,9 @@ def outliersInsertion(sampleData, densPer,k):
 def trainLinearModelPrevNext(mainData,nSamp,p):
     janela = math.floor(p/2)
 
-    #se for p = 7 então fica janela = 3
-    #Logo a janela de amostras anteriores vai ser janela + 1 = 4 e os seguintes com a janela = 3
-    #Tem que ser os anteriores os favorecidos pois vale mais a pena ter um valor passado do que um futuro
+    #if p = 7 then window = 3
+    #Then the previous samples window will be window + 1 = 4 and the following ones with window = 3
+    #It has to be the previous ones that are favored because it is worth more to have a past value than a future one
 
     if p % 2 == 0:
         janelaPrev = janela
@@ -154,16 +159,17 @@ def trainLinearModelPrevNext(mainData,nSamp,p):
     else:
         janelaPrev = janela + 1
     
-    #Matriz n x p+1 --> +1 coluna de 1s
+    #Matriz n x p+1 --> +1 row of 1s
     matrixX = np.zeros((nSamp,p+1))
 
-    #p=8 ; janela = p/2 = 4; matrixX na coluna 4 é so 1 e contem os valores seguintes da posiçao 0 a 3 
+    #p=8 ; janela = p/2 = 4; 
+    #matrixX in column 4 is only values = 1 and contains the following values from position 0 to 3 
     matrixX[:,janela] = 1
 
-    #Para ter matriz Y correta tem começar a partir do elemento em que tem janelaPrev valores anteriores
+    #To have correct Y matrix you have to start from the element where you have windowPrev previous values
     matrixY = mainData[janelaPrev:janelaPrev +nSamp]
 
-    #matriz em cada linha contem os valores anteriores do valor que se quer prever
+    #matrix in each row contains the previous values of the value you want to predict
     #Ex: MatrizX [Yi+3 Yi+2 Yi+1 1 Yi-1 Yi-2 Yi-3]
 
     for i in range(nSamp):
@@ -171,10 +177,10 @@ def trainLinearModelPrevNext(mainData,nSamp,p):
         sampValPrev = mainData[i:janelaPrev+i][::-1]
         sampValNext = mainData[janelaPrev+i+1:janela+janelaPrev+i+1][::-1]
 
-        matrixX[i,:janela] = sampValNext #Antes da coluna do 1 são os seguintes
-        matrixX[i,janela+1:] = sampValPrev #Depois é que são os anteriores
+        matrixX[i,:janela] = sampValNext #Before the column of 1 are the following
+        matrixX[i,janela+1:] = sampValPrev #Then it's the former values
     
-    # B = PseudoInv(X)*Y para se calcular o vetor de Pesos
+    # B = PseudoInv(X)*Y to calculate the Weight vector
     pseudoInvX = np.linalg.pinv(matrixX)
     slopeVec = np.dot(pseudoInvX,matrixY)
     return slopeVec
@@ -186,13 +192,13 @@ def trainLinearModelPrev(mainData,n,p):
     matrixX[:,0] = 1
     matrixY = mainData[p:p+n]
 
-    #matriz em cada linha contem os valores anteriores do valor que se quer prever
+    #matrix in each row contains the previous values of the value you want to predict
     #Ex: MatrizX [1 Yi-1 Yi-2 ... Yi-p]
     for i in range(n):
         sampVal = mainData[i:p+i]
         matrixX[i,1:] = sampVal[::-1]
     
-    # B = PseudoInv(X)*Y para se calcular o vetor de Pesos
+    # B = PseudoInv(X)*Y to calculate the Weight vector
     pseudoInvX = np.linalg.pinv(matrixX)
     slopeVec = np.dot(pseudoInvX,matrixY)
     return slopeVec
@@ -247,15 +253,15 @@ def testLinearModelPrevVal(mainData,indOut,p):
     realValues = []
     predValues = []
 
-    #Retirar os valores com os indices de outliers para o treino do modelo
+    #Remove the values with outlier indices for model training
     dataWithoutOut = np.delete(np.copy(mainData),indOut)
     
     slopeVec = trainLinearModelPrev(dataWithoutOut,len(dataWithoutOut)-p,p)
 
     for outlier in indOut:
-        if outlier >= p: #se o indice for 5 e a janela for 6
+        if outlier >= p: #if index is 5 and window is 6
             
-            #amostra P valores anteriores em relacao ao outlier com a primeira coluna com o valor 1
+            #sample P previous values relative to the outlier with the first column having the value 1
             prevValOut = np.ones((p+1))
             prevValOut[1:] = mainData[outlier - p: outlier][::-1]
             
@@ -306,10 +312,10 @@ def testPVals(arrPs,mainData,indOutliers):
         print("MODELO p/2 valores anteriores e p/2 valores seguintes")
         print("Somatorio erro quadrático: " + str(meanSquareModelPrevNext))
         print("\n\n")
-    #Tuplo com array de valores previstos e array de valores reais pelo modelo linear de p valores anteriores
+    #Tuples with array of predicted values and array of actual values by the p-valued prior linear model
     valModelPrev = (arrRealModelPrev,arrPredictedModelPrev)
 
-    #Tuplo com array de valores previstos e array de valores reais pelo modelo linear de p/2 valores anteriores e seguintes
+    #Tuplo with array of predicted values and array of actual values by the linear model of p/2 preceding and following values
     valModelPrevNext = (arrRealModelPrevNext,arrPredictedModelPrevNext)
 
     return arrMeanSquareModelPrev,arrMeanSquareModelPrevNext,valModelPrev,valModelPrevNext
