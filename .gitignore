@@ -3,3 +3,4 @@ backup/
 outputs/
 *.pdf
 *.html
+Plots/

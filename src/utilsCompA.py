@@ -1,18 +1,45 @@
-from numpy.lib.type_check import real
-from mpl_toolkits import mplot3d
-import math
-import matplotlib
-from matplotlib import legend
-from random import randint
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy import stats, fft, signal
-from plotly.express import scatter_3d, scatter
-from sklearn.decomposition import PCA
+from dependecies import *
+from globals import * 
 
-
-# -- globals
+# -- globalss
 sFreq, windowDuration = 51.2, 2
+
+def genData(chosenSensor, windSize,overlap,phys,stats):
+    alldata = []
+    for participant in range(maxPart):
+        data = extractPartData(dirParts, participant)
+        sensorData = data[data[:, 0] == chosenSensor]
+        # store array of windows for each activity
+        windows = getWindows(
+            {k: [] for k in activityLabels.keys()},
+            windSize,
+            overlap,
+            sensorData
+        )
+        for act, win in windows.items():
+            for w in win:
+                alldata.append(
+                    getWindowData(w, stats, phys)
+                    + [activityLabels.get(act)]  # append activity name in the end
+                )
+    dataset = pd.DataFrame(alldata, columns=getColumns(labels, stats, phys))
+
+    # normalize dataset
+    for column in dataset:
+        if column != 'act':
+            dataset[column] = normalize(dataset[column])
+
+    # save to csv for performance
+    if not path.exists(dirOutput):
+        mkdir(dirOutput)
+    filepath = path.join(dirOutput, f'dev{chosenSensor}.csv')
+    if not path.exists(filepath):
+        dataset.to_csv(
+            filepath,
+            index=False
+        )
+
+    return dataset
 
 
 def extractPartData(dir, numPart):
@@ -35,7 +62,6 @@ def getAllPartData(dir, maxPart):
         data = extractPartData(dir, part)
         allData = np.append(allData, data, axis=0)
     return allData
-
 
 def getVectorModule(data, startIndex):
     return np.linalg.norm(data[:, startIndex:startIndex + 3], axis=1)
@@ -935,3 +961,5 @@ def plotEvrPc(evratios, pc):
     )
     ax.grid()
     plt.show()
+
+    

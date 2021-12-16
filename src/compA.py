@@ -1,38 +1,6 @@
-from os import access
-from numpy.core.numeric import outer
-from numpy.lib.function_base import select
-from utils import *
-from os import path, mkdir
-import pandas as pd
+from globals import *
+from utilsCompA import *
 
-import warnings
-warnings.filterwarnings('ignore')
-
-# Globals
-
-strAcc, strGir, strMag = "Aceleração", "Giroscopio", "Magnometro"
-
-dirParts = "../assets/part"
-dirOutput = "../outputs"
-maxPart = 15
-noOfSensors = 5
-
-indexModule = {strAcc: 1, strGir: 4, strMag: 7}
-
-activityLabels = {
-    1: 'Stand', 2: 'Sit', 3: 'Sit and Talk', 4: 'Walk', 5: 'Walk and Talk',
-    6: 'Climb Stair(up/down)', 7: 'Climb(up/down)', 8: 'Stand -> Sit',
-    9: ' Sit -> Stand', 10: 'Stand -> Sit and Talk', 11: 'Sit -> Stand and talk',
-    12: 'Stand -> Walk', 13: 'Walk -> Stand',
-    14: 'Stand -> climb stairs (up/down), stand -> climb stairs (up/down) and talk',
-    15: 'Climb stairs (up/down) -> walk',
-    16: 'Climb stairs (up/down) and talk -> walk and talk'}
-
-deviceID = {1: 'Pulso Esquerdo', 2: 'Pulso direito', 3: 'Peito',
-            4: 'Perna superior direita', 5: 'Perna inferior esquerda'
-            }
-
-labels = ["acc", "gyro", "mag"]
 
 # Questao 2 - Importação de Dados
 # allData = getAllPartData(dirParts + "part", maxPart)
@@ -45,6 +13,7 @@ labels = ["acc", "gyro", "mag"]
 
 # Questao 3.3 e 3.4
 # -- Variables
+
 """
 chosenParticipant = 0
 chosenActivity = 8
@@ -75,7 +44,10 @@ plt.show()
 """
 
 # Questão 3.6
-# variables --
+# Variables ----
+
+
+
 """
 chosenParticipant = 0
 chosenActivity = 1
@@ -117,6 +89,7 @@ plt.show()
 # NH = Normal distribution and
 # our data's underlying distribution are the same
 # variables --
+
 """
 chosenActivity = 16
 chosenSensorId = 1
@@ -177,7 +150,6 @@ for participant in range(maxPart):
 # question to generate dataset
 
 # variables --
-"""
 chosenSensorId = 1
 chosenParticipant = 0
 debug = False
@@ -186,10 +158,9 @@ sFreq = 51.2  # as described in dataset
 windowDuration = 2  # seconds
 windowSize = round(windowDuration * sFreq)
 overlap = windowSize // 2  # 50% overlap as described in https://bit.ly/tcd-paper
-"""
+
 # ------------
 
-"""
 data = extractPartData(dirParts, chosenParticipant)
 sensorData = data[data[:, 0] == chosenSensorId]
 
@@ -204,15 +175,13 @@ windows = getWindows(
 for i in range(1, 17):
     print(len(windows[i]))
 for w in windows[13]:
-    accStats = getStatFeat(stats, w, 1, 3)
+    accStats = getFeatures(stats, w, 1, 3)
     print(accStats)
-"""
 
 # df and energy are not
 # statistical features but are
 # computed for each axis, like
 # the other metrics in this list.
-"""
 stats = [
     np.mean, np.median, np.std,
     stats.skew, stats.kurtosis,
@@ -225,45 +194,9 @@ phys = [
     cagh, avgd,
     avhd,  # aratg
 ]
-"""
 
-# generate dataset
-"""
-alldata = []
-for participant in range(maxPart):
-    data = extractPartData(dirParts, participant)
-    sensorData = data[data[:, 0] == chosenSensorId]
-    # store array of windows for each activity
-    windows = getWindows(
-        {k: [] for k in activityLabels.keys()},
-        windowSize,
-        overlap,
-        sensorData
-    )
-    for act, win in windows.items():
-        for w in win:
-            alldata.append(
-                getWindowData(w, stats, phys)
-                + [activityLabels.get(act)]  # append activity name in the end
-            )
-
-dataset = pd.DataFrame(alldata, columns=getColumns(labels, stats, phys))
-
-# normalize dataset
-for column in dataset:
-    if column != 'act':
-        dataset[column] = normalize(dataset[column])
-
-# save to csv for performance
-if not path.exists(dirOutput):
-    mkdir(dirOutput)
-filepath = path.join(dirOutput, f'dev{chosenSensorId}.csv')
-if not path.exists(filepath):
-    dataset.to_csv(
-        filepath,
-        index=False
-    )
-"""
+# generate dataset normalized and saved into a csv
+dataset = genData(chosenSensorId,windowSize,overlap,phys,stats)
 
 # -- variables
 # chosenSensorId = 2
@@ -277,8 +210,8 @@ if not path.exists(filepath):
 # colors = [hexCode() for i in range(len(activityLabels.values()))]
 
 # stat feature comparison
-"""
 # for ft in ['mean', 'median', 'std', 'skew', 'kurtosis']:
+
 for s in labels:
     comparisonPlot(
         dataset,
@@ -289,6 +222,8 @@ for s in labels:
 """
 
 # phys feature comparison
+"""
+
 """
 comparisonPlot(
     dataset,
@@ -319,67 +254,77 @@ comparisonPlot(
     mode='2d'
 )
 """
-
 # Questão 4.3 + 4.4
 # [1] https://towardsdatascience.com/pca-clearly-explained-how-when-why-to-use-it-and-feature-importance-a-guide-in-python-7c274582c37e
 # [2] https://towardsdatascience.com/pca-using-python-scikit-learn-e653f8989e60
 # [3] https://youtu.be/kApPBm1YsqU
 
 # -- variables
-chosenSensorId = 2
-dataset = pd.read_csv(path.join(dirOutput, f'dev{chosenSensorId}.csv'))
-evr = 75
+
+#chosenSensorId = 2
+#dataset = pd.read_csv(path.join(dirOutput, f'dev{chosenSensorId}.csv'))
+#evr = 75
+
 # ------------
 """
-- Explained variance ratio has to be > 85% (sum of array).
-If its lower than that, a lot of data is lost, and
-it is not a valid analysis [3].
-- Every pca can have at most min(n_samples, n_features) PC's
-In our case, we have n_samples > n_features = 102, hence,
-we can have at most 102 PC's.
+
+    - Explained variance ratio has to be > 85% (sum of array).
+    If its lower than that, a lot of data is lost, and
+    it is not a valid analysis [3].
+    - Every pca can have at most min(n_samples, n_features) PC's
+    In our case, we have n_samples > n_features = 102, hence,
+    we can have at most 102 PC's.
+
 """
 # prepare data
-target = dataset['act']  # save activities column
-dataset = dataset.drop(['act'], axis=1)
 
-# In the code below, we apply pca
-# with increasing pc's
-# to find the best tradeoff
-# between performance and information
+#target = dataset['act']  # save activities column
+#dataset = dataset.drop(['act'], axis=1)
 
-# for at least 95% EVR, the # of PCs is 47+. We've
-# halved the dimensionality of the problem
-# while only losing 5% of the information.
-# In our opinion, this is a great trade-off
-# between performance and information
-# For at least 75% EVR, the # of PCs is 22+.
-evratios = getEvrs(dataset)
-pcs = findPCs(evratios, evr + 1)
-plotEvrPc(evratios, pcs)
+"""
+    # In the code below, we apply pca
+    # with increasing pc's
+    # to find the best tradeoff
+    # between performance and information
 
+    # for at least 95% EVR, the # of PCs is 47+. We've
+    # halved the dimensionality of the problem
+    # while only losing 5% of the information.
+    # In our opinion, this is a great trade-off
+    # between performance and information
+    # For at least 75% EVR, the # of PCs is 22+.
+
+"""
+#evratios = getEvrs(dataset)
+#pcs = findPCs(evratios, evr + 1)
+#plotEvrPc(evratios, pcs)
 
 # Questão 4.4.2
-# The first component is responsible for most
-# of the variance in the data, and each subsequent
-# component is responsible for increasingly less
-# variance.
 
-# pros and use cases:
-# - pca is useful when there's a lot of features/variables
-# to consider
-# - denoising and data compression
-# - essential for data processing in smaller devices with
-# less computing power, as this technique helps identify
-# the most important variables, and exclude the rest.
-# Less variables -> smaller problem space ->
-# -> less computing power needed -> faster ML data processing.
+"""
+    # The first component is responsible for most
+    # of the variance in the data, and each subsequent
+    # component is responsible for increasingly less
+    # variance.
 
-# cons:
-# - Loss of information: Whenever PCA is used, there's an inherent
-# compromise between performance enhancement and data loss.
-# - Data interpretability: Analyzing PCA's output can be difficult
-# if you don't fully grasp its concept and the data structures
-# involved.
+    # pros and use cases:
+    # - pca is useful when there's a lot of features/variables
+    # to consider
+    # - denoising and data compression
+    # - essential for data processing in smaller devices with
+    # less computing power, as this technique helps identify
+    # the most important variables, and exclude the rest.
+    # Less variables -> smaller problem space ->
+    # -> less computing power needed -> faster ML data processing.
+
+    # cons:
+    # - Loss of information: Whenever PCA is used, there's an inherent
+    # compromise between performance enhancement and data loss.
+    # - Data interpretability: Analyzing PCA's output can be difficult
+    # if you don't fully grasp its concept and the data structures
+    # involved.
+"""
+
 # centroids, groups = kmeans2(device_data[:, :3], 3, 1)
 # plotKmeans(device_data[:, :3], centroids, groups)
 
@@ -409,7 +354,7 @@ print(trainLinearModel(sample,len(sample)-p,p))
 
 # Neste caso vamoos aplicar o LOOCV(Leave one out Cross Validation) -
 # https://www.youtube.com/watch?v=fSytzGwwBVw&ab_channel=StatQuestwithJoshStarmer
-
+"""
 chosenAct = 1
 allData = getAllPartData(dirParts, maxPart)
 ActData = getActivityData(allData, chosenAct, None)
@@ -497,7 +442,7 @@ plt.subplot(2, 1, 2)
 scatterPlotRealPredicted(realPredValModelPrevNext[0][:numPoints], realPredValModelPrevNext[1][:numPoints],
                          strGir, "Modelo Linear p/2 valores anteriores e seguintes")
 
-"""
+plt.show()
 
      Conclusion on the comparison of the 2 models
 
@@ -507,7 +452,3 @@ scatterPlotRealPredicted(realPredValModelPrevNext[0][:numPoints], realPredValMod
     So if I wanted to predict values for missing data I would use the second model
 
 """
-
-plt.show()
-
-print("Done")
