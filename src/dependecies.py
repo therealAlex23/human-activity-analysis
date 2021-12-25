@@ -23,7 +23,7 @@ from sklearn.dummy import DummyClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neural_network import MLPClassifier
 from skfeature.function.similarity_based.reliefF import feature_ranking, reliefF
-from itertools import combinations
+from skfeature.function.similarity_based.fisher_score import fisher_score
 from copy import deepcopy
 
 import os
